@@ -10,10 +10,10 @@
 * [x] Output or register the public key (e.g., save to a known directory or publish to a registry file).
 ---
 3. Minting Cards
-* [ ] Implement mint-card command (can be restricted to issuer).
-* [ ] Require issuer’s private key path as an argument.
-* [ ] Load issuer’s private key, sign the mint transaction.
-* [ ] Add the mint transaction to the blockchain.
+* [x] Implement mint-card command (can be restricted to issuer).
+* [x] Require issuer’s private key path as an argument.
+* [x] Load issuer’s private key, sign the mint transaction.
+* [x] Add the mint transaction to the blockchain.
 * [ ] Optionally, consider a separate CLI app for issuer actions if you want stricter separation.
 ---
 4. User Transactions (Atomic Swaps)

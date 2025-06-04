@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Spood.BlockChainCards;
 
@@ -18,18 +14,10 @@ public class BCTransaction
     public BCTransactionType Type { get; init; }
 
     private byte[]? _signature = null;
-
+    public byte[]? Signature => _signature;
+    
     [JsonIgnore]
     public bool IsSigned => _signature != null;
-
-    [JsonIgnore]
-    public byte[]? Signature => _signature;
-
-    public string? Signature64
-    {
-        get => _signature != null ? Convert.ToBase64String(_signature) : null;
-        init => _signature = value != null ? Convert.FromBase64String(value) : null;
-    }
 
     public BCTransaction()
     {
@@ -62,7 +50,7 @@ public class BCTransaction
             throw new InvalidOperationException("Transaction must be signed before converting to string with signature.");
         }
 
-        return $"{ToTransacionString()}:{Convert.ToBase64String(_signature)}";
+        return $"{ToTransacionString()}:{Convert.ToBase64String(_signature!)}";
     }
 
     public byte[] ToSignedTransactionBytes()

@@ -5,21 +5,11 @@ namespace Spood.BlockChainCards;
 
 class BCUserWallet
 {
-    public string PrivateKey64 { get; set; } = "";
-    public string publicKey64 { get; set; } = "";
+    public byte[] PrivateKey { get; init; }
+    public byte[] PublicKey { get; init; }
 
     [JsonIgnore]
-    public byte[] PrivateKey => Convert.FromBase64String(PrivateKey64);
-
-    [JsonIgnore]
-    public byte[] PublicKey => Convert.FromBase64String(publicKey64);
-
-    [JsonIgnore]
-    public byte[] publicKeyHash => ComputeHash(PublicKey);
-
-    [JsonIgnore]
-    public string publicKeyHash64 => Convert.ToBase64String(publicKeyHash);
-
+    public byte[] PublicKeyHash => SHA256.HashData(PublicKey);
 
     public BCUserWallet()
     {
@@ -28,13 +18,7 @@ class BCUserWallet
 
     public BCUserWallet(byte[] publicKey, byte[] privateKey)
     {
-        publicKey64 = Convert.ToBase64String(publicKey);
-        PrivateKey64 = Convert.ToBase64String(privateKey);
-    }
-
-    public byte[] ComputeHash(byte[] bytes)
-    {
-        using var sha256 = SHA256.Create();
-        return sha256.ComputeHash(bytes);
+        PublicKey = publicKey;
+        PrivateKey = privateKey;
     }
 }

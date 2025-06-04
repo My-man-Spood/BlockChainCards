@@ -24,8 +24,8 @@ class MintCardCommand : ICommand
         var authorityWallet = System.Text.Json.JsonSerializer.Deserialize<BCUserWallet>(authorityWalletJson);
 
         var transaction = new BCTransaction(
-            authorityWallet.publicKeyHash,
-            userWallet.publicKeyHash,
+            authorityWallet.PublicKeyHash,
+            userWallet.PublicKeyHash,
             [card1.Hash],
             [],
             DateTime.UtcNow,

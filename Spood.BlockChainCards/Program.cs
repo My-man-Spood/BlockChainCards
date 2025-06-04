@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using Microsoft.VisualBasic;
-using Spood.BlockChainCards;
 using Spood.BlockChainCards.Commands;
 
 var commandTypes = Assembly.GetExecutingAssembly()
