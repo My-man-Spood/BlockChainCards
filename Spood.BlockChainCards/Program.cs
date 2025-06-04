@@ -1,8 +1,46 @@
-﻿using Spood.BlockChainCards;
+﻿using System.Reflection;
+using Microsoft.VisualBasic;
+using Spood.BlockChainCards;
+using Spood.BlockChainCards.Commands;
 
-// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+var commandTypes = Assembly.GetExecutingAssembly()
+    .GetTypes()
+    .Where(t => typeof(ICommand).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract);
 
+var commands = commandTypes
+    .Select(t => (ICommand)Activator.CreateInstance(t)!)
+    .ToDictionary(cmd => cmd.Name, StringComparer.OrdinalIgnoreCase);
+
+string command = "";
+while (command != "exit")
+{
+    command = Console.ReadLine();
+    if (string.IsNullOrWhiteSpace(command))
+        continue;
+
+    var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    var cmdName = parts[0];
+    var cmdArgs = parts.Skip(1).ToArray();
+
+    if (cmdName.Equals("exit", StringComparison.OrdinalIgnoreCase))
+    {
+        break;
+    }
+    else if (cmdName.Equals("help", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.WriteLine("Available commands: " + string.Join(", ", commands.Keys) + ", exit, help");
+    }
+    else if (commands.TryGetValue(cmdName, out var cmd))
+    {
+        cmd.Execute(cmdArgs);
+    }
+    else
+    {
+        Console.WriteLine($"Unknown command: {cmdName}");
+    }
+}
+
+/*
 var jer = Guid.Parse("F480B982-CF69-4401-8B5F-46783EC8018B");
 var joe = Guid.Parse("17A944F5-5410-4361-8503-B01C2C04F309");
 var jen = Guid.Parse("DF34B17C-A727-4D71-A65D-C5606E245643");
@@ -24,5 +62,5 @@ Console.WriteLine($"Block 2 Data: {BitConverter.ToString(block2.BlockData).Repla
 Console.WriteLine($"Block 2 Hash: {BitConverter.ToString(block2.Hash).Replace("-", "")}");
 Console.WriteLine($"Block 3 Data: {BitConverter.ToString(block3.BlockData).Replace("-", "")}");
 Console.WriteLine($"Block 3 Hash: {BitConverter.ToString(block3.Hash).Replace("-", "")}");
-
+*/
 
