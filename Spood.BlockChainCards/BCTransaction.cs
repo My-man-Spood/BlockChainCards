@@ -33,6 +33,16 @@ public class BCTransaction
         Timestamp = timestamp;
         Type = type;
     }
+    
+    public BCTransaction(byte[] user1, byte[] user2, IEnumerable<string> cardsFromUser164, IEnumerable<string> cardsFromUser264, DateTime timestamp, BCTransactionType type)
+    {
+        User1 = user1;
+        User2 = user2;
+        CardsFromUser1 = cardsFromUser164.Select(card => Convert.FromBase64String(card));
+        CardsFromUser2 = cardsFromUser264.Select(card => Convert.FromBase64String(card));
+        Timestamp = timestamp;
+        Type = type;
+    }
 
     public string ToTransacionString()
     {

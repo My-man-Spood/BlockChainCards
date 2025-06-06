@@ -25,7 +25,7 @@
 * [ ] Ensure both signatures are present before adding to the blockchain.
 ---
 5. Blockchain Storage
-* [ ] Implement blockchain persistence to a flat file (e.g., JSON or binary).
+* [x] Implement blockchain persistence to a flat file (e.g., JSON or binary).
 * [ ] On startup, load the blockchain from file; on changes, save it.
 * [ ] Add a show-blockchain command to display the chain or its summary.
 ---
