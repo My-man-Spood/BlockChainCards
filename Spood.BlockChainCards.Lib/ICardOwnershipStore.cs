@@ -25,6 +25,16 @@ public interface ICardOwnershipStore
     byte[]? GetOwner(byte[] cardHash);
 
     /// <summary>
+    /// Locks a card (used when processing new blocks).
+    /// </summary>
+    void LockCard(byte[] cardHash, int blockIndex, string? transactionId = null);
+
+    /// <summary>
+    /// Unlocks a card (used when processing new blocks).
+    /// </summary>
+    void UnlockCard(byte[] cardHash);
+
+    /// <summary>
     /// Sets the owner for a card hash (used when processing new blocks).
     /// </summary>
     void SetOwner(byte[] cardHash, byte[] ownerPublicKey);

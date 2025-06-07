@@ -21,6 +21,8 @@ public class MintCardTransaction : BCTransaction
 
     public override bool IsFullySigned => _authoritySignature != null;
 
+    public override string? Id => IsFullySigned ? ToSignedTransactionBytes().ToHex() : null;
+
     public MintCardTransaction(byte[] authorityPublicKey, byte[] recipientPublicKey, byte[] card, DateTime timestamp)
     {
         AuthorityPublicKey = authorityPublicKey;
@@ -67,5 +69,10 @@ public class MintCardTransaction : BCTransaction
         ecdsa.ImportSubjectPublicKeyInfo(AuthorityPublicKey, out _);
         var transactionString = ToTransactionString();
         return ecdsa.VerifyData(Encoding.UTF8.GetBytes(transactionString), AuthoritySignature, HashAlgorithmName.SHA256);
+    }
+
+    public override IEnumerable<byte[]> GetAllCards()
+    {
+        return [Card]; 
     }
 }

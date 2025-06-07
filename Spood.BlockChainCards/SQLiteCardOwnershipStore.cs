@@ -36,6 +36,11 @@ namespace Spood.BlockChainCards
             CREATE TABLE IF NOT EXISTS OwnershipCheckpoint (
                 Id INTEGER PRIMARY KEY CHECK(Id = 1),
                 BlockIndex INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS LockedCards (
+                CardHash TEXT PRIMARY KEY,
+                BlockIndex INTEGER,
+                TransactionId TEXT
             );";
             cmd.ExecuteNonQuery();
         }
@@ -66,15 +71,50 @@ namespace Spood.BlockChainCards
         {
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT OwnerPublicKey FROM CardOwnership WHERE CardHash = $cardHash;";
-            cmd.Parameters.AddWithValue("$cardHash", cardHash.ToHex());
-            using var reader = cmd.ExecuteReader();
-            if (reader.Read())
+            // First, check if card is locked
+            using (var lockCmd = conn.CreateCommand())
             {
-                return (byte[])reader["OwnerPublicKey"];
+                lockCmd.CommandText = "SELECT 1 FROM LockedCards WHERE CardHash = $cardHash LIMIT 1;";
+                lockCmd.Parameters.AddWithValue("$cardHash", cardHash.ToHex());
+                var locked = lockCmd.ExecuteScalar();
+                if (locked != null && locked != DBNull.Value)
+                    return null; // Card is locked in an unconfirmed block
             }
-            return null;
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT OwnerPublicKey FROM CardOwnership WHERE CardHash = $cardHash;";
+                cmd.Parameters.AddWithValue("$cardHash", cardHash.ToHex());
+                using var reader = cmd.ExecuteReader();
+                if (reader.Read())
+                {
+                    return (byte[])reader["OwnerPublicKey"];
+                }
+                return null;
+            }
+        }
+
+        // Lock a card (called when a card is involved in an unconfirmed block)
+        public void LockCard(byte[] cardHash, int blockIndex, string? transactionId = null)
+        {
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"INSERT OR IGNORE INTO LockedCards (CardHash, BlockIndex, TransactionId) VALUES ($cardHash, $blockIndex, $txid);";
+            cmd.Parameters.AddWithValue("$cardHash", cardHash.ToHex());
+            cmd.Parameters.AddWithValue("$blockIndex", blockIndex);
+            cmd.Parameters.AddWithValue("$txid", (object?)transactionId ?? DBNull.Value);
+            cmd.ExecuteNonQuery();
+        }
+
+        // Unlock a card (called when a block is confirmed or orphaned)
+        public void UnlockCard(byte[] cardHash)
+        {
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"DELETE FROM LockedCards WHERE CardHash = $cardHash;";
+            cmd.Parameters.AddWithValue("$cardHash", cardHash.ToHex());
+            cmd.ExecuteNonQuery();
         }
 
         public void SetOwner(byte[] cardHash, byte[] ownerPublicKey)

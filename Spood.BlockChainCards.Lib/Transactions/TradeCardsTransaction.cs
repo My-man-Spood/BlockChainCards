@@ -21,6 +21,8 @@ public class TradeCardsTransaction : BCTransaction
 
     public override bool IsFullySigned => _user1Signature != null && _user2Signature != null;
 
+    public override string? Id => IsFullySigned ? ToSignedTransactionBytes().ToHex(): null;
+
     public TradeCardsTransaction(byte[] user1PublicKey, byte[] user2PublicKey, IEnumerable<byte[]> cardsFromUser1, IEnumerable<byte[]> cardsFromUser2, DateTime timestamp)
     {
         User1PublicKey = user1PublicKey;
@@ -87,5 +89,10 @@ public class TradeCardsTransaction : BCTransaction
         using var ecdsa = ECDsa.Create();
         ecdsa.ImportSubjectPublicKeyInfo(publicKey, out _);
         return ecdsa.VerifyData(Encoding.UTF8.GetBytes(ToTransactionString()), signature, HashAlgorithmName.SHA256);
+    }
+
+    public override IEnumerable<byte[]> GetAllCards()
+    {
+        return CardsFromUser1.Concat(CardsFromUser2);
     }
 }

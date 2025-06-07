@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Spood.BlockChainCards.Lib;
 using Spood.BlockChainCards.Lib.Transactions;
@@ -8,6 +6,7 @@ namespace Spood.BlockChainCards;
 
 public class FileBlockChainReader : IBlockChainReader
 {
+    private const int blockSafetyThreshold = 5;
     private readonly string filePath;
     private readonly JsonSerializerOptions serializerOptions;
     private readonly IWalletReader walletReader;
@@ -32,15 +31,28 @@ public class FileBlockChainReader : IBlockChainReader
     {
         var lastBlockIndex = GetLastBlockIndex();
         var checkpointIndex = cardOwnershipStore.GetCheckpoint();
-        if (lastBlockIndex < checkpointIndex)
+        var blocks = ReadBlockChain();
+        if (lastBlockIndex - blockSafetyThreshold > checkpointIndex)
         {
             cardOwnershipStore.BeginBulkIngest();
-            var blocks = ReadBlockChain();
-            for (int i = checkpointIndex; i <= lastBlockIndex; i++)
+            for (int i = checkpointIndex; i <= lastBlockIndex - blockSafetyThreshold; i++)
             {
                 cardOwnershipStore.IngestBlock(blocks[i], i);
             }
             cardOwnershipStore.EndBulkIngest();
+        }
+        
+        // Lock cards for unsafe blocks
+        for (int i = lastBlockIndex - blockSafetyThreshold + 1; i <= lastBlockIndex; i++)
+        {
+            var block = blocks[i];
+            foreach (var tx in block.Transactions)
+            {
+                foreach (var card in tx.GetAllCards())
+                {
+                    cardOwnershipStore.LockCard(card.Hash, i, tx.Id);
+                }
+            }
         }
     }
 
@@ -57,10 +69,11 @@ public class FileBlockChainReader : IBlockChainReader
     {
         ValidateTransaction(transaction);
         var blocks = ReadBlockChain().ToList();
-        if (!blocks.Any())
-            throw new InvalidOperationException("No blocks exist in the blockchain.");
-        var lastBlock = blocks.Last();
-        lastBlock.Transactions.Add(transaction);
+        var lastBlockIndex = GetLastBlockIndex();
+        foreach (var card in transaction.GetAllCards())
+        {
+            cardOwnershipStore.LockCard(card.Hash, lastBlockIndex, transaction.Id);
+        }
         SaveBlockChain(blocks);
     }
 

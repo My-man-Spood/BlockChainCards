@@ -8,10 +8,11 @@ namespace Spood.BlockChainCards.Lib.Transactions;
 public abstract class BCTransaction
 {
     public DateTime Timestamp { get; set; }
-
+    public abstract string? Id { get; }
     public abstract bool IsFullySigned { get; }
     public abstract string ToTransactionString();
     public abstract void Sign(byte[] privateKey);
     public abstract byte[] ToSignedTransactionBytes();
     public abstract bool VerifySignature();
+    public abstract IEnumerable<byte[]> GetAllCards();
 }
