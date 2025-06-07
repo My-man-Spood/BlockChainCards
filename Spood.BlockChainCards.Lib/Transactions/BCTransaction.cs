@@ -13,4 +13,5 @@ public abstract class BCTransaction
     public abstract string ToTransactionString();
     public abstract void Sign(byte[] privateKey);
     public abstract byte[] ToSignedTransactionBytes();
+    public abstract bool VerifySignature();
 }

@@ -73,4 +73,19 @@ public class TradeCardsTransaction : BCTransaction
         var sig2 = User2Signature ?? Array.Empty<byte>();
         return Encoding.UTF8.GetBytes($"{transactionString}:{Convert.ToBase64String(sig1)}:{Convert.ToBase64String(sig2)}");
     }
+
+    public override bool VerifySignature()
+    {
+        if(!IsFullySigned) return false;
+
+        return VerifyUserSignature(User1Signature!, User1PublicKey)
+            && VerifyUserSignature(User2Signature!, User2PublicKey);
+    }
+
+    private bool VerifyUserSignature(byte[] signature, byte[] publicKey)
+    {
+        using var ecdsa = ECDsa.Create();
+        ecdsa.ImportSubjectPublicKeyInfo(publicKey, out _);
+        return ecdsa.VerifyData(Encoding.UTF8.GetBytes(ToTransactionString()), signature, HashAlgorithmName.SHA256);
+    }
 }

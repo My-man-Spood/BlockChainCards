@@ -1,44 +1,61 @@
-1. Convert the App to a CLI
-* [x] Integrate a CLI parser (e.g., System.CommandLine or CommandLineParser).
-* [x] Define commands: create-user, mint-card, make-transaction, show-blockchain, etc.
-* [x] Refactor Main to dispatch actions based on CLI input.
+# BlockChainCards TODO
+
+## ✅ Completed
+- [x] Wallet creation, loading, and saving
+- [x] CLI parser and command structure
+- [x] Mint transaction signing and authority validation
+- [x] Trade (atomic swap) command and two-step signature flow
+- [x] Blockchain persistence to JSON file
+- [x] Show-blockchain CLI command
+- [x] Fast SQLite-backed card ownership store
+
 ---
-2. User Creation
-* [x] Implement create-user command.
-* [x] Generate a public/private key pair for the user (e.g., using ECDsa).
-* [x] Save the private key securely (e.g., to a file, path provided by user).
-* [x] Output or register the public key (e.g., save to a known directory or publish to a registry file).
+
+## 🟡 Card Ownership Store Integration (In Progress)
+- [ ] Route all ownership checks and updates through `ICardOwnershipStore`
+- [ ] Add error handling/logging for ingest failures
+- [ ] Ensure checkpointing logic is robust (no missed/duplicate blocks)
+
 ---
-3. Minting Cards
-* [x] Implement mint-card command (can be restricted to issuer).
-* [x] Require issuer’s private key path as an argument.
-* [x] Load issuer’s private key, sign the mint transaction.
-* [x] Add the mint transaction to the blockchain.
-* [ ] Optionally, consider a separate CLI app for issuer actions if you want stricter separation.
+
+## 🟠 Blockchain Storage Upgrade
+- [ ] Migrate blockchain storage from JSON file to SQLite
+    - [ ] Design schema for blocks and transactions
+    - [ ] Implement efficient block/transaction insertion and queries
+    - [ ] Update CLI and core logic to use new storage
+
 ---
-4. User Transactions (Atomic Swaps)
-* [ ] Implement make-transaction command.
-* [ ] Allow specifying both parties, cards to exchange, and private key paths.
-* [ ] Support a two-step process:
-	* Step 1: Initiator creates and signs the transaction, outputs a pending transaction file.
-    * Step 2: Counterparty loads the pending transaction, reviews, signs, and submits it.
-* [ ] Ensure both signatures are present before adding to the blockchain.
+
+## 🟢 Consensus, Mining, and Transaction Pool
+- [ ] Add nonce and proof-of-work to blocks
+    - [ ] Add nonce field to block structure
+    - [ ] Implement mining logic (find valid nonce)
+    - [ ] Add difficulty target and validation
+- [ ] Implement transaction pool (mempool)
+    - [ ] Maintain pool of pending transactions
+    - [ ] Allow mining/confirmation from pool
+    - [ ] Add CLI commands for submitting and viewing pending transactions
+- [ ] Block confirmation and chain validation
+    - [ ] Confirm blocks only after proof-of-work
+    - [ ] Add full block and chain validation routines
+
 ---
-5. Blockchain Storage
-* [x] Implement blockchain persistence to a flat file (e.g., JSON or binary).
-* [ ] On startup, load the blockchain from file; on changes, save it.
-* [ ] Add a show-blockchain command to display the chain or its summary.
+
+## 🛠️ CLI, Usability, and Enhancements
+- [ ] Add card definition registry (card IDs → metadata)
+- [ ] Improve CLI error messages and help output
+- [ ] Add logging for actions and errors
+- [ ] (Optional) Separate CLI app for issuer actions
+
 ---
-6. Issuer Authority Validation
-* [ ] Store the issuer’s public key in a well-known location (e.g., a config file or hardcoded).
-* [ ] When minting, verify that the transaction is signed by the issuer’s private key and matches the known public key.
-* [ ] Reject mint transactions not signed by the issuer.
+
+## 🧪 General & Integration
+- [ ] Add more integration tests for all critical flows
+- [ ] Review for any missing integration between new modules (ownership, storage, validation)
+- [x] Store issuer’s public key in a well-known location
+- [x] Reject mint transactions not signed by issuer
+
 ---
-Optional Enhancements
-* [ ] Add card definition registry (mapping card IDs to metadata).
-* [ ] Add user-friendly error messages and help output for CLI.
-* [ ] Implement transaction and block validation logic.
-* [ ] Add logging for actions and errors.
----
-Tip:
-Start with the CLI skeleton and user creation, then add minting, then transactions, then persistence and validation. Test each step interactively as you go.
+
+**Tip:**
+Focus next on finishing card ownership store integration in `FileBlockChainReader`, especially validating during bulk ingest and robust error handling. Then, plan the SQLite blockchain storage migration and dive into mining, nonce, and transaction pool for a full blockchain experience!

@@ -58,4 +58,14 @@ public class MintCardTransaction : BCTransaction
         var signature = AuthoritySignature ?? Array.Empty<byte>();
         return Encoding.UTF8.GetBytes($"{transactionString}:{Convert.ToBase64String(signature)}");
     }
+
+    public override bool VerifySignature()
+    {
+        if (AuthoritySignature == null) return false;
+
+        using var ecdsa = ECDsa.Create();
+        ecdsa.ImportSubjectPublicKeyInfo(AuthorityPublicKey, out _);
+        var transactionString = ToTransactionString();
+        return ecdsa.VerifyData(Encoding.UTF8.GetBytes(transactionString), AuthoritySignature, HashAlgorithmName.SHA256);
+    }
 }

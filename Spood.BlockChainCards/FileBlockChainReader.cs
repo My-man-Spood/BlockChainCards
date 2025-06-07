@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Spood.BlockChainCards.Lib;
 using Spood.BlockChainCards.Lib.Transactions;
@@ -8,13 +10,37 @@ public class FileBlockChainReader : IBlockChainReader
 {
     private readonly string filePath;
     private readonly JsonSerializerOptions serializerOptions;
-    public FileBlockChainReader(string filePath, JsonSerializerOptions serializerOptions)
+    private readonly IWalletReader walletReader;
+    private readonly ICardOwnershipStore cardOwnershipStore;
+    public FileBlockChainReader(string filePath, JsonSerializerOptions serializerOptions, IWalletReader walletReader, ICardOwnershipStore cardOwnershipStore)
     {
         this.filePath = filePath;
         this.serializerOptions = serializerOptions;
+        this.walletReader = walletReader;
+        this.cardOwnershipStore = cardOwnershipStore;
         if (!File.Exists(filePath))
         {
             InitializeBlockChain();
+        }
+        else
+        {
+            BulkIngest(cardOwnershipStore);
+        }
+    }
+
+    private void BulkIngest(ICardOwnershipStore cardOwnershipStore)
+    {
+        var lastBlockIndex = GetLastBlockIndex();
+        var checkpointIndex = cardOwnershipStore.GetCheckpoint();
+        if (lastBlockIndex < checkpointIndex)
+        {
+            cardOwnershipStore.BeginBulkIngest();
+            var blocks = ReadBlockChain();
+            for (int i = checkpointIndex; i <= lastBlockIndex; i++)
+            {
+                cardOwnershipStore.IngestBlock(blocks[i], i);
+            }
+            cardOwnershipStore.EndBulkIngest();
         }
     }
 
@@ -29,12 +55,52 @@ public class FileBlockChainReader : IBlockChainReader
 
     public void AddTransaction(BCTransaction transaction)
     {
+        ValidateTransaction(transaction);
         var blocks = ReadBlockChain().ToList();
         if (!blocks.Any())
             throw new InvalidOperationException("No blocks exist in the blockchain.");
         var lastBlock = blocks.Last();
         lastBlock.Transactions.Add(transaction);
         SaveBlockChain(blocks);
+    }
+
+    private bool ValidateTransaction(BCTransaction transaction)
+    {
+        switch (transaction)
+        {
+            case MintCardTransaction mintCardTransaction:
+                return ValidateMintCardTransaction(mintCardTransaction);
+            case TradeCardsTransaction tradeCardsTransaction:
+                return ValidateTradeCardsTransaction(tradeCardsTransaction);
+            default:
+                return false;
+        }
+    }
+
+    private bool ValidateMintCardTransaction(MintCardTransaction transaction)
+    {
+        var authorityWallet = walletReader.LoadWallet("./Authority-wallet.json");
+        var isAuthorityPublicKey = transaction.AuthorityPublicKey.SequenceEqual(authorityWallet.PublicKey);
+
+        return isAuthorityPublicKey && transaction.VerifySignature();
+    }
+
+    private bool ValidateTradeCardsTransaction(TradeCardsTransaction transaction)
+    {
+        var user1CardsValid = ValidateCardsForUser(transaction.CardsFromUser1, transaction.User1PublicKey);
+        var user2CardsValid = ValidateCardsForUser(transaction.CardsFromUser2, transaction.User2PublicKey);
+        return transaction.VerifySignature() && user1CardsValid && user2CardsValid;
+    }
+
+    private bool ValidateCardsForUser(IEnumerable<byte[]> cards, byte[] publicKey)
+    {
+        foreach (var card in cards)
+        {
+            var owner = cardOwnershipStore.GetOwner(card);
+            if (owner == null || !owner.SequenceEqual(publicKey))
+                return false;
+        }
+        return true;
     }
 
     public IReadOnlyList<BCBlock> ReadBlockChain()
@@ -45,12 +111,12 @@ public class FileBlockChainReader : IBlockChainReader
         return JsonSerializer.Deserialize<List<BCBlock>>(json, serializerOptions)!;
     }
 
-    public BCBlock GetLastBlock()
+    public int GetLastBlockIndex()
     {
         var blocks = ReadBlockChain();
         if (!blocks.Any())
             throw new InvalidOperationException("No blocks exist in the blockchain.");
-        return blocks.Last();
+        return blocks.Count - 1;
     }
 
     public void SaveBlockChain(IEnumerable<BCBlock> blocks)
