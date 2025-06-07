@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35806.99 d17.13
+VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards", "Spood.BlockChainCards\Spood.BlockChainCards.csproj", "{F1D69912-DEEC-4077-B756-4FC143990310}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Lib.Tests", "Spood.BlockChainCards.Lib.Tests\Spood.BlockChainCards.Lib.Tests.csproj", "{BCEE909F-5765-44AD-90BE-26084D41AEBF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Lib", "Spood.BlockChainCards.Lib\Spood.BlockChainCards.Lib.csproj", "{73FDFCED-E57D-40C5-A837-F2C1393E86E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{F1D69912-DEEC-4077-B756-4FC143990310}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1D69912-DEEC-4077-B756-4FC143990310}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1D69912-DEEC-4077-B756-4FC143990310}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCEE909F-5765-44AD-90BE-26084D41AEBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCEE909F-5765-44AD-90BE-26084D41AEBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCEE909F-5765-44AD-90BE-26084D41AEBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCEE909F-5765-44AD-90BE-26084D41AEBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73FDFCED-E57D-40C5-A837-F2C1393E86E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73FDFCED-E57D-40C5-A837-F2C1393E86E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73FDFCED-E57D-40C5-A837-F2C1393E86E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73FDFCED-E57D-40C5-A837-F2C1393E86E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

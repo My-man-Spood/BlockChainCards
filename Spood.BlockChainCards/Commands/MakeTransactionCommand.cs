@@ -1,16 +1,28 @@
 using CommandLine;
+using Spood.BlockChainCards.Lib;
+using Spood.BlockChainCards.Lib.Transactions;
+using System.Text.Json;
 
 namespace Spood.BlockChainCards.Commands;
 
 class MakeTransactionCommand : ICommand
 {
     public string Name => "make-transaction";
+    private readonly IBlockChainReader blockChainReader;
+    private readonly IWalletReader walletReader;
+    private readonly JsonSerializerOptions serializerOptions;
+    public MakeTransactionCommand(IBlockChainReader blockChainReader, IWalletReader walletReader, JsonSerializerOptions serializerOptions)
+    {
+        this.blockChainReader = blockChainReader;
+        this.walletReader = walletReader;
+        this.serializerOptions = serializerOptions;
+    }
 
     public void Execute(string[] options)
     {
         // take user1 wallet
         var makeTransactionOptions = Parser.Default.ParseArguments<MakeTransactionOptions>(options)
-            .WithParsed(o => TakeSecondInput(o));
+            .WithParsed(TakeSecondInput);
     }
 
     public void TakeSecondInput(MakeTransactionOptions options)
@@ -19,33 +31,28 @@ class MakeTransactionCommand : ICommand
         var command2 = Console.ReadLine();
         var cmdArgs = command2.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var makeTransactionOptions2 = Parser.Default.ParseArguments<MakeTransactionOptions>(cmdArgs)
-            .WithParsed(options2 => MakeTransaction(options, options2));
+            .WithParsed(opt => MakeTransaction(options, opt));
     }
 
     public void MakeTransaction(MakeTransactionOptions options, MakeTransactionOptions options2)
     {
         // Load the user's wallet from the provided path
-        var userWalletJson = File.ReadAllText(options.UserWalletPath);
-        var userWallet = System.Text.Json.JsonSerializer.Deserialize<BCUserWallet>(userWalletJson);
-
-        // Load the recipient's wallet from the provided card hash
-        var recipientWalletJson = File.ReadAllText(options.CardHash);
-        var recipientWallet = System.Text.Json.JsonSerializer.Deserialize<BCUserWallet>(recipientWalletJson);
+        var userWallet = walletReader.LoadWallet(options.UserWalletPath);
+        var recipientWallet = walletReader.LoadWallet(options2.UserWalletPath);
 
         // Create a new transaction
-        var transaction = new BCTransaction(
-            userWallet.PublicKeyHash,
-            recipientWallet.PublicKeyHash,
-            [options.CardHash], // Assuming no card hashes are being transferred in this transaction
-            [options2.CardHash],
-            DateTime.UtcNow,
-            BCTransactionType.TransferCard);
+        var transaction = new TradeCardsTransaction(
+            userWallet.PublicKey,
+            recipientWallet.PublicKey,
+            [Convert.FromHexString(options.CardHash)], // Assuming no card hashes are being transferred in this transaction
+            [Convert.FromHexString(options2.CardHash)],
+            DateTime.UtcNow);
 
         // Sign the transaction with the user's private key
         transaction.Sign(userWallet.PrivateKey);
         transaction.Sign(recipientWallet.PrivateKey);
         // Add the transaction to the blockchain
-        BlockChainReader.AddTransaction(transaction);
+        blockChainReader.AddTransaction(transaction);
     }
 }
 

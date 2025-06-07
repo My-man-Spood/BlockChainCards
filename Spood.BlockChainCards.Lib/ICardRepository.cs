@@ -1,4 +1,4 @@
-namespace Spood.BlockChainCards;
+namespace Spood.BlockChainCards.Lib;
 
 public interface ICardRepository
 {

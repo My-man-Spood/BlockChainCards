@@ -1,21 +1,22 @@
 ﻿using System.Security.Cryptography;
 using System.Text.Json.Serialization;
-using Spood.BlockChainCards.Transactions;
+using Spood.BlockChainCards.Lib.Transactions;
 
-namespace Spood.BlockChainCards;
+namespace Spood.BlockChainCards.Lib;
 
-public class BCCardBlock
+public class BCBlock
 {
     public byte[] PreviousHash { get; init; }
     public List<BCTransaction> Transactions { get; init; }
     public byte[] Hash { get; set; } = Array.Empty<byte>();
-
-    public BCCardBlock()
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public int Nonce { get; set; }
+    public BCBlock()
     {
         // Empty constructor for serialization
     }
 
-    public BCCardBlock(byte[] previous_hash, IEnumerable<BCTransaction> transactionList)
+    public BCBlock(byte[] previous_hash, IEnumerable<BCTransaction> transactionList)
     {
         PreviousHash = previous_hash;
         Transactions = transactionList.ToList();

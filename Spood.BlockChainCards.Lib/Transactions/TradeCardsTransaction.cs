@@ -1,11 +1,15 @@
+using Spood.BlockChainCards.Lib.Utils;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 
-namespace Spood.BlockChainCards.Transactions;
+namespace Spood.BlockChainCards.Lib.Transactions;
 
 public class TradeCardsTransaction : BCTransaction
 {
+    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] User1PublicKey { get; set; }
+    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] User2PublicKey { get; set; }
     public IEnumerable<byte[]> CardsFromUser1 { get; set; }
     public IEnumerable<byte[]> CardsFromUser2 { get; set; }
@@ -33,10 +37,10 @@ public class TradeCardsTransaction : BCTransaction
 
     public override string ToTransactionString()
     {
-        var user1Hex = BitConverter.ToString(User1PublicKey).Replace("-", "");
-        var user2Hex = BitConverter.ToString(User2PublicKey).Replace("-", "");
-        var cardsFromUser1Hex = string.Join(",", CardsFromUser1.Select(card => BitConverter.ToString(card).Replace("-", "")));
-        var cardsFromUser2Hex = string.Join(",", CardsFromUser2.Select(card => BitConverter.ToString(card).Replace("-", "")));
+        var user1Hex = User1PublicKey.ToHex();
+        var user2Hex = User2PublicKey.ToHex();
+        var cardsFromUser1Hex = string.Join(",", CardsFromUser1.Select(card => card.ToHex()));
+        var cardsFromUser2Hex = string.Join(",", CardsFromUser2.Select(card => card.ToHex()));
         return $"{user1Hex}:{user2Hex}:{cardsFromUser1Hex}:{cardsFromUser2Hex}:{Timestamp:O}";
     }
 

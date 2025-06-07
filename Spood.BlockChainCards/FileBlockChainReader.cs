@@ -1,15 +1,30 @@
-using System.Collections.Generic;
-using System.Linq;
-using Spood.BlockChainCards.Transactions;
+using System.Text.Json;
+using Spood.BlockChainCards.Lib;
+using Spood.BlockChainCards.Lib.Transactions;
 
 namespace Spood.BlockChainCards;
 
 public class FileBlockChainReader : IBlockChainReader
 {
-    private readonly string _filePath;
-    public FileBlockChainReader(string filePath)
+    private readonly string filePath;
+    private readonly JsonSerializerOptions serializerOptions;
+    public FileBlockChainReader(string filePath, JsonSerializerOptions serializerOptions)
     {
-        _filePath = filePath;
+        this.filePath = filePath;
+        this.serializerOptions = serializerOptions;
+        if (!File.Exists(filePath))
+        {
+            InitializeBlockChain();
+        }
+    }
+
+    public void InitializeBlockChain()
+    {
+        var genesisBlock = new BCBlock(Enumerable.Repeat((byte)153,32).ToArray(), []);
+        var blockChain = new List<BCBlock> { genesisBlock };
+
+        var blockChainJson = JsonSerializer.Serialize(blockChain, serializerOptions);
+        File.WriteAllText(filePath, blockChainJson);
     }
 
     public void AddTransaction(BCTransaction transaction)
@@ -22,15 +37,15 @@ public class FileBlockChainReader : IBlockChainReader
         SaveBlockChain(blocks);
     }
 
-    public IReadOnlyList<BCCardBlock> ReadBlockChain()
+    public IReadOnlyList<BCBlock> ReadBlockChain()
     {
-        if (!File.Exists(_filePath))
-            return new List<BCCardBlock>();
-        var json = File.ReadAllText(_filePath);
-        return System.Text.Json.JsonSerializer.Deserialize<List<BCCardBlock>>(json);
+        if (!File.Exists(filePath))
+            return new List<BCBlock>();
+        var json = File.ReadAllText(filePath);
+        return JsonSerializer.Deserialize<List<BCBlock>>(json, serializerOptions)!;
     }
 
-    public BCCardBlock GetLastBlock()
+    public BCBlock GetLastBlock()
     {
         var blocks = ReadBlockChain();
         if (!blocks.Any())
@@ -38,9 +53,9 @@ public class FileBlockChainReader : IBlockChainReader
         return blocks.Last();
     }
 
-    public void SaveBlockChain(IEnumerable<BCCardBlock> blocks)
+    public void SaveBlockChain(IEnumerable<BCBlock> blocks)
     {
-        var json = System.Text.Json.JsonSerializer.Serialize(blocks);
-        File.WriteAllText(_filePath, json);
+        var json = JsonSerializer.Serialize(blocks, serializerOptions);
+        File.WriteAllText(filePath, json);
     }
 }

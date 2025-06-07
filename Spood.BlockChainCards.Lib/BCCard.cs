@@ -1,12 +1,14 @@
+using Spood.BlockChainCards.Lib.Utils;
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 
-namespace Spood.BlockChainCards;
+namespace Spood.BlockChainCards.Lib;
 
 public class BCCard
 {
     public byte[] Hash { get; }
     public string Name { get; }
-    public string Hash64 => Convert.ToBase64String(Hash);
+    public string HashHex => Hash.ToHex();
 
     public BCCard(string name)
     {

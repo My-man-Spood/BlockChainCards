@@ -1,14 +1,13 @@
+using Spood.BlockChainCards.Lib.Utils;
 using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 
-namespace Spood.BlockChainCards;
+namespace Spood.BlockChainCards.Lib;
 
-class BCUserWallet
+public class BCUserWallet
 {
     public byte[] PrivateKey { get; init; }
     public byte[] PublicKey { get; init; }
-
-    [JsonIgnore]
     public byte[] PublicKeyHash => SHA256.HashData(PublicKey);
 
     public BCUserWallet()

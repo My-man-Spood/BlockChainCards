@@ -1,5 +1,7 @@
 using CommandLine;
-using Spood.BlockChainCards.Transactions;
+using Spood.BlockChainCards.Lib;
+using Spood.BlockChainCards.Lib.Transactions;
+using System.Text.Json;
 
 namespace Spood.BlockChainCards.Commands;
 
@@ -7,22 +9,32 @@ class MintCardCommand : ICommand
 {
     public string Name => "mint-card";
 
+    private readonly ICardRepository cardRepo;
+    private readonly IBlockChainReader blockChainReader;
+    private readonly IWalletReader walletReader;
+    private readonly JsonSerializerOptions serializerOptions;
+
+    public MintCardCommand(ICardRepository cardRepo, IBlockChainReader blockChainReader, IWalletReader walletReader, JsonSerializerOptions serializerOptions)
+    {
+        this.cardRepo = cardRepo;
+        this.blockChainReader = blockChainReader;
+        this.walletReader = walletReader;
+        this.serializerOptions = serializerOptions;
+    }
+
     public void Execute(string[] options)
     {
         var mintCardOptions = Parser.Default.ParseArguments<MintCardOptions>(options)
-            .WithParsed(o => MintCard(o));
+            .WithParsed(MintCard);
     }
 
     private void MintCard(MintCardOptions options)
     {
         var card1 = new BCCard(options.CardName);
-        BCCardRepo.SaveCard(new BCCard(options.CardName));
+        cardRepo.SaveCard(card1);
 
-        var userWalletjson = File.ReadAllText(options.UserKeyPath);
-        var userWallet = System.Text.Json.JsonSerializer.Deserialize<BCUserWallet>(userWalletjson);
-
-        var authorityWalletJson = File.ReadAllText("./Authority-wallet.json");
-        var authorityWallet = System.Text.Json.JsonSerializer.Deserialize<BCUserWallet>(authorityWalletJson);
+        var userWallet = walletReader.LoadWallet(options.UserKeyPath);
+        var authorityWallet = walletReader.LoadWallet("./Authority-wallet.json");
 
         var transaction = new MintCardTransaction(
             authorityWallet.PublicKey,
@@ -31,7 +43,7 @@ class MintCardCommand : ICommand
             DateTime.UtcNow);
 
         transaction.Sign(authorityWallet.PrivateKey);
-        BlockChainReader.AddTransaction(transaction);
+        blockChainReader.AddTransaction(transaction);
     }
 
 }

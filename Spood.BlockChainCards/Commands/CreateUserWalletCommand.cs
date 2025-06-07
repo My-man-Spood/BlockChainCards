@@ -1,4 +1,6 @@
 using System.Security.Cryptography;
+using Spood.BlockChainCards.Lib;
+using System.Text.Json;
 using CommandLine;
 
 namespace Spood.BlockChainCards.Commands;
@@ -6,14 +8,18 @@ namespace Spood.BlockChainCards.Commands;
 public class CreateUserWalletCommand : ICommand
 {
     public string Name => "create-wallet";
+    private readonly JsonSerializerOptions serializerOptions;
+    private readonly IWalletReader walletReader;
+    public CreateUserWalletCommand(JsonSerializerOptions serializerOptions, IWalletReader walletReader)
+    {
+        this.serializerOptions = serializerOptions;
+        this.walletReader = walletReader;
+    }
 
     public void Execute(string[] options)
     {
-        var createUserOptions = Parser.Default.ParseArguments<CreateUserOptions>(options).WithParsed(o => CreateWallet(o));
-        // Implementation for creating a user
-        // This could involve interacting with a database or an API
-        // to create a new user with the provided options.
-        
+        var createUserOptions = Parser.Default.ParseArguments<CreateUserOptions>(options)
+        .WithParsed(CreateWallet);
     }
 
     private void CreateWallet(CreateUserOptions options)
@@ -26,16 +32,9 @@ public class CreateUserWalletCommand : ICommand
         var publicKey = ecdsa.ExportSubjectPublicKeyInfo();
         // Save these as needed
         var userWallet = new BCUserWallet(publicKey, privateKey);
-        var serializerOptions = new System.Text.Json.JsonSerializerOptions
-        {
-            WriteIndented = true,
-        };
-        var walletJson = System.Text.Json.JsonSerializer.Serialize(userWallet, serializerOptions);
+        walletReader.SaveWallet(Path.Combine(options.KeyPath, $"{options.KeyName}.json"), userWallet);
 
-        var walletPath = Path.Combine(options.KeyPath, $"{options.KeyName}.json");
-        File.WriteAllBytes(walletPath, System.Text.Encoding.UTF8.GetBytes(walletJson));
-
-        Console.WriteLine($"User wallet created. Saved to {walletPath}.");
+        Console.WriteLine($"User wallet created. Saved to {options.KeyPath}.");
     }
 }
 

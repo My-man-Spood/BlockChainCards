@@ -1,12 +1,11 @@
-using System.Collections.Generic;
-using System.Linq;
-using Spood.BlockChainCards.Transactions;
+using Spood.BlockChainCards.Lib;
+using Spood.BlockChainCards.Lib.Transactions;
 
 namespace Spood.BlockChainCards;
 
 public class InMemoryBlockChainReader : IBlockChainReader
 {
-    private readonly List<BCCardBlock> _blocks = new();
+    private readonly List<BCBlock> _blocks = new();
 
     public void AddTransaction(BCTransaction transaction)
     {
@@ -17,19 +16,19 @@ public class InMemoryBlockChainReader : IBlockChainReader
         lastBlock.Transactions.Add(transaction);
     }
 
-    public IReadOnlyList<BCCardBlock> ReadBlockChain()
+    public IReadOnlyList<BCBlock> ReadBlockChain()
     {
         return _blocks.AsReadOnly();
     }
 
-    public BCCardBlock GetLastBlock()
+    public BCBlock GetLastBlock()
     {
         if (!_blocks.Any())
             throw new InvalidOperationException("No blocks exist in the blockchain.");
         return _blocks.Last();
     }
 
-    public void SaveBlockChain(IEnumerable<BCCardBlock> blocks)
+    public void SaveBlockChain(IEnumerable<BCBlock> blocks)
     {
         _blocks.Clear();
         _blocks.AddRange(blocks);

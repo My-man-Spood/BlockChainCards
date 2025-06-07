@@ -1,12 +1,19 @@
+using Spood.BlockChainCards.Lib.Utils;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 
-namespace Spood.BlockChainCards.Transactions;
+namespace Spood.BlockChainCards.Lib.Transactions;
 
 public class MintCardTransaction : BCTransaction
 {
+    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] AuthorityPublicKey { get; init; }
+
+    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] RecipientPublicKey { get; init; }
+
+    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] Card { get; init; }
 
     private byte[]? _authoritySignature;
@@ -29,9 +36,9 @@ public class MintCardTransaction : BCTransaction
 
     public override string ToTransactionString()
     {
-        var authorityHex = BitConverter.ToString(AuthorityPublicKey).Replace("-", "");
-        var recipientHex = BitConverter.ToString(RecipientPublicKey).Replace("-", "");
-        var cardHex = BitConverter.ToString(Card).Replace("-", "");
+        var authorityHex = AuthorityPublicKey.ToHex();
+        var recipientHex = RecipientPublicKey.ToHex();
+        var cardHex = Card.ToHex();
         return $"{authorityHex}:{recipientHex}:{cardHex}:{Timestamp:O}";
     }
 

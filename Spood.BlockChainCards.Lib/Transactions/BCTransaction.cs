@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Spood.BlockChainCards.Transactions;
+namespace Spood.BlockChainCards.Lib.Transactions;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "Type")]
 [JsonDerivedType(typeof(TradeCardsTransaction), "TradeCards")]
