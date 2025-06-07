@@ -1,4 +1,5 @@
 using CommandLine;
+using Spood.BlockChainCards.Transactions;
 
 namespace Spood.BlockChainCards.Commands;
 
@@ -23,13 +24,11 @@ class MintCardCommand : ICommand
         var authorityWalletJson = File.ReadAllText("./Authority-wallet.json");
         var authorityWallet = System.Text.Json.JsonSerializer.Deserialize<BCUserWallet>(authorityWalletJson);
 
-        var transaction = new BCTransaction(
-            authorityWallet.PublicKeyHash,
-            userWallet.PublicKeyHash,
-            [card1.Hash],
-            [],
-            DateTime.UtcNow,
-            BCTransactionType.MintCard);
+        var transaction = new MintCardTransaction(
+            authorityWallet.PublicKey,
+            userWallet.PublicKey,
+            card1.Hash,
+            DateTime.UtcNow);
 
         transaction.Sign(authorityWallet.PrivateKey);
         BlockChainReader.AddTransaction(transaction);

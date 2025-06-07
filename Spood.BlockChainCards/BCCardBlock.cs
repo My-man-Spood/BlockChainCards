@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text.Json.Serialization;
+using Spood.BlockChainCards.Transactions;
 
 namespace Spood.BlockChainCards;
 

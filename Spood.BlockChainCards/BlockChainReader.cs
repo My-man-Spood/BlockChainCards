@@ -1,10 +1,12 @@
+using Spood.BlockChainCards.Transactions;
+
 namespace Spood.BlockChainCards;
 
 public class BlockChainReader
 {
     public static void AddTransaction(BCTransaction transaction)
     {
-        if (!transaction.IsSigned) throw new InvalidOperationException("Transaction must be signed before adding to the blockchain.");
+        if (!transaction.IsFullySigned) throw new InvalidOperationException("Transaction must be signed before adding to the blockchain.");
 
         var blockChain = ReadBlockChain();
         var lastBlock = blockChain.Last();
