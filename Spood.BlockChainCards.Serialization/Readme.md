@@ -23,6 +23,45 @@ This document describes the binary layout for serializing a `MintCardTransaction
 - For each variable-length field (public keys, signature), write a 4-byte length prefix followed by the bytes.
 - If `authoritySignature` is not present, write a length of 0 and no signature bytes.
 
+## Binary Serialization Format: TradeCardsTransaction
+
+| Offset | Field                  | Size (bytes)      | Description                                             |
+|--------|------------------------|-------------------|---------------------------------------------------------|
+| 0      | version                | 1                 | Format version (e.g. 0x01)                              |
+| 1      | discriminator          | 1                 | Transaction type (0x02)                                 |
+| 2      | user1KeyLen            | 4                 | Length of User1PublicKey (int, little-endian)           |
+| 6      | user1PublicKey         | N (variable)      | DER-encoded User 1 public key                           |
+| 6+N    | user2KeyLen            | 4                 | Length of User2PublicKey (int, little-endian)           |
+| 10+N   | user2PublicKey         | M (variable)      | DER-encoded User 2 public key                           |
+| 10+N+M | cardsFromUser1Count    | 4                 | Number of cards from User 1 (int, little-endian)        |
+| ...    | cardsFromUser1         | 32 * C1           | C1 card hashes from User 1 (each 32 bytes)              |
+| ...    | cardsFromUser2Count    | 4                 | Number of cards from User 2 (int, little-endian)        |
+| ...    | cardsFromUser2         | 32 * C2           | C2 card hashes from User 2 (each 32 bytes)              |
+| ...    | timestamp              | 8                 | DateTime.ToBinary()                                     |
+| ...    | user1SignatureLen      | 4                 | Length of User1Signature (int, little-endian)           |
+| ...    | user1Signature         | S1 (variable)     | DER-encoded ECDSA signature from User 1 (if present)    |
+| ...    | user2SignatureLen      | 4                 | Length of User2Signature (int, little-endian)           |
+| ...    | user2Signature         | S2 (variable)     | DER-encoded ECDSA signature from User 2 (if present)    |
+
+- All multi-byte fields are little-endian.
+- For each variable-length field, write a 4-byte length prefix followed by the bytes.
+- For card arrays, write a 4-byte count, then each 32-byte card hash in order.
+- If a signature is not present, write a length of 0 and no signature bytes.
+
+## Binary Serialization Format: BCBlock
+
+| Offset | Field                  | Size (bytes)      | Description                                             |
+|--------|------------------------|-------------------|---------------------------------------------------------|
+| 0      | version                | 1                 | Format version (e.g. 0x01)                              |
+| 1      | previousHash           | 32                | Previous block hash                                     |
+| 33     | timestamp              | 8                 | DateTime.ToBinary()                                     |
+| 41     | transactionCount       | 4                 | Number of transactions (int, little-endian)             |
+| 45     | transactions[]         | variable          | For each transaction:                                   |
+|        | - txLength             | 4                 | Length of serialized transaction (int, little-endian)    |
+|        | - txBytes              | N (variable)      | Serialized transaction bytes                            |
+
+- Transactions are serialized using the transaction format tables above.
+
 #### Example Offsets
 - Offsets after variable-length fields must be computed at runtime:
     - recipientKeyLen offset = 6 + authorityKeyLen

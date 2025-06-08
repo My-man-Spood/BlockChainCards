@@ -10,7 +10,6 @@ public class BCBlock
     public List<BCTransaction> Transactions { get; init; }
     public byte[] Hash { get; set; } = Array.Empty<byte>();
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-    public int Nonce { get; set; }
     public BCBlock()
     {
         // Empty constructor for serialization

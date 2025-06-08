@@ -107,7 +107,6 @@ class ShowBlockchainCommand : ICommand
         Console.WriteLine($"Timestamp: {block.Timestamp}");
         Console.WriteLine($"Hash: {block.Hash.ToHex()}");
         Console.WriteLine($"Previous Hash: {block.PreviousHash.ToHex()}");
-        Console.WriteLine($"Nonce: {block.Nonce}");
         Console.WriteLine($"Transactions: {block.Transactions.Count}");
     }
 }
