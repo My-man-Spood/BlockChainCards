@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Spood.BlockChainCards.Lib;
 using Spood.BlockChainCards.Lib.Transactions;
+using Spood.BlockChainCards.Serialization;
 
 namespace Spood.BlockChainCards;
 
@@ -11,13 +12,14 @@ public class FileBlockChainReader : IBlockChainReader
     private readonly JsonSerializerOptions serializerOptions;
     private readonly IWalletReader walletReader;
     private readonly ICardOwnershipStore cardOwnershipStore;
+    private const string blockChainFolder = "BlockChain";
     public FileBlockChainReader(string filePath, JsonSerializerOptions serializerOptions, IWalletReader walletReader, ICardOwnershipStore cardOwnershipStore)
     {
         this.filePath = filePath;
         this.serializerOptions = serializerOptions;
         this.walletReader = walletReader;
         this.cardOwnershipStore = cardOwnershipStore;
-        if (!File.Exists(filePath))
+        if (!Directory.Exists(filePath))
         {
             InitializeBlockChain();
         }
@@ -74,7 +76,7 @@ public class FileBlockChainReader : IBlockChainReader
         var genesisBlock = new BCBlock(Enumerable.Repeat((byte)153,32).ToArray(), []);
         var blockChain = new List<BCBlock> { genesisBlock };
 
-        var blockChainJson = JsonSerializer.Serialize(blockChain, serializerOptions);
+        var blockBytes = BlockSerializer.Serialize(blockChain);
         File.WriteAllText(filePath, blockChainJson);
     }
 

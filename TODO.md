@@ -21,7 +21,7 @@
 ## 🟠 Blockchain Storage Upgrade (Flat File + SQLite Index)
 - [ ] **Switch to storing blocks in batch flat files with binary serialization**
     - [ ] Design a binary serialization format for blocks (and transactions if needed)
-    - [ ] Implement serialization/deserialization methods for blocks
+    - [x] Implement serialization/deserialization methods for blocks
 - [ ] **Batch blocks into files** (e.g., `blocks_0_999.dat`)
     - [ ] Write new blocks as byte arrays appended to the current file
     - [ ] Rotate to a new file every N blocks (e.g., 1000)
