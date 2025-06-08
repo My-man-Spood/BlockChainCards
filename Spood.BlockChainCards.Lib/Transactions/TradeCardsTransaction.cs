@@ -23,13 +23,15 @@ public class TradeCardsTransaction : BCTransaction
 
     public override string? Id => IsFullySigned ? ToSignedTransactionBytes().ToHex(): null;
 
-    public TradeCardsTransaction(byte[] user1PublicKey, byte[] user2PublicKey, IEnumerable<byte[]> cardsFromUser1, IEnumerable<byte[]> cardsFromUser2, DateTime timestamp)
+    public TradeCardsTransaction(byte[] user1PublicKey, byte[] user2PublicKey, IEnumerable<byte[]> cardsFromUser1, IEnumerable<byte[]> cardsFromUser2, DateTime timestamp, byte[]? user1Signature = null, byte[]? user2Signature = null)
     {
         User1PublicKey = user1PublicKey;
         User2PublicKey = user2PublicKey;
         CardsFromUser1 = cardsFromUser1;
         CardsFromUser2 = cardsFromUser2;
         Timestamp = timestamp;
+        _user1Signature = user1Signature;
+        _user2Signature = user2Signature;
     }
 
     public TradeCardsTransaction()

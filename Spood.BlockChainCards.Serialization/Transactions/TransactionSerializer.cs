@@ -11,6 +11,8 @@ public static class TransactionSerializer
         {
             case MintCardTransaction mintCardTransaction:
                 return new MintCardTransactionSerializer().Serialize(mintCardTransaction);
+            case TradeCardsTransaction tradeCardsTransaction:
+                return new TradeCardsTransactionSerializer().Serialize(tradeCardsTransaction);
             default:
                 throw new ArgumentException("Unsupported transaction type");
         }
@@ -28,6 +30,8 @@ public static class TransactionSerializer
         {
             case MintCardTransactionSerializer.discriminator:
                 return new MintCardTransactionSerializer().Deserialize(bytes);
+            case 2:
+                return new TradeCardsTransactionSerializer().Deserialize(bytes);
             default:
                 throw new ArgumentException("Unsupported transaction type");
         }
