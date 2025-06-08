@@ -1,7 +1,7 @@
 using Spood.BlockChainCards.Lib;
 using System.Collections.Concurrent;
 
-namespace Spood.BlockChainCards;
+namespace Spood.BlockChainCards.Testing.Lib.TestApi;
 
 public class InMemoryCardRepository : ICardRepository
 {

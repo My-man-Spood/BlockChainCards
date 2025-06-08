@@ -17,7 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Spood.BlockChainCards.Lib\Spood.BlockChainCards.Lib.csproj" />
+    <ProjectReference Include="..\Spood.BlockChainCards.Serialization\Spood.BlockChainCards.Serialization.csproj" />
+    <ProjectReference Include="..\Spood.BlockChainCards.Testing.Lib\Spood.BlockChainCards.Testing.Lib.csproj" />
   </ItemGroup>
 
   <ItemGroup>

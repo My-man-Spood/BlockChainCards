@@ -18,26 +18,52 @@
 
 ---
 
-## 🟠 Blockchain Storage Upgrade
-- [ ] Migrate blockchain storage from JSON file to SQLite
-    - [ ] Design schema for blocks and transactions
-    - [ ] Implement efficient block/transaction insertion and queries
-    - [ ] Update CLI and core logic to use new storage
+## 🟠 Blockchain Storage Upgrade (Flat File + SQLite Index)
+- [ ] **Switch to storing blocks in batch flat files with binary serialization**
+    - [ ] Design a binary serialization format for blocks (and transactions if needed)
+    - [ ] Implement serialization/deserialization methods for blocks
+- [ ] **Batch blocks into files** (e.g., `blocks_0_999.dat`)
+    - [ ] Write new blocks as byte arrays appended to the current file
+    - [ ] Rotate to a new file every N blocks (e.g., 1000)
+- [ ] **SQLite index for fast lookup**
+    - [ ] Create a SQLite table with: block hash, file name, offset, length
+    - [ ] On block write, insert index entry
+    - [ ] On block lookup, query index and read the correct file/offset/length
+- [ ] **Update CLI and core logic to use new storage**
+    - [ ] Refactor block read/write code to use the new flat file + index system
+    - [ ] Add migration tool or script to convert existing JSON chain to new format if needed
+- [ ] (Optional) Benchmark performance and tune batch size or index structure
+
+**Recommended approach for scalability and learning.**
 
 ---
 
-## 🟢 Consensus, Mining, and Transaction Pool
-- [ ] Add nonce and proof-of-work to blocks
-    - [ ] Add nonce field to block structure
-    - [ ] Implement mining logic (find valid nonce)
-    - [ ] Add difficulty target and validation
-- [ ] Implement transaction pool (mempool)
-    - [ ] Maintain pool of pending transactions
-    - [ ] Allow mining/confirmation from pool
-    - [ ] Add CLI commands for submitting and viewing pending transactions
-- [ ] Block confirmation and chain validation
-    - [ ] Confirm blocks only after proof-of-work
-    - [ ] Add full block and chain validation routines
+## 🟢 Proof of Stake (PoS) & Multi-Node Test Network
+- [ ] **Implement coins/currency**
+    - [ ] Add a coin/balance system to the blockchain
+    - [ ] Support minting, transferring, and tracking coin balances
+    - [ ] Add coin-balance queries to CLI
+- [ ] **Design and implement staking logic**
+    - [ ] Allow users to "stake" coins (lock coins to become block proposers)
+    - [ ] Track staked balances per user
+- [ ] **Block proposer selection (PoS round)**
+    - [ ] Implement weighted random or round-robin proposer selection based on staked coins
+    - [ ] Add proposer signature to block structure
+    - [ ] Ensure only eligible stakers can propose blocks
+- [ ] **Block validation**
+    - [ ] Validate proposer eligibility and signature
+    - [ ] Validate all included transactions (signatures, double-spend, etc.)
+    - [ ] Update block confirmation logic for PoS
+- [ ] **Networking (local multi-node testnet)**
+    - [ ] Add CLI/config support for running multiple nodes with separate data directories/ports
+    - [ ] Implement basic peer discovery or static peer list
+    - [ ] Implement P2P message passing for blocks and transactions (e.g., TCP/UDP/HTTP on localhost)
+- [ ] **Testing and simulation**
+    - [ ] Run multiple local nodes to test PoS selection and block propagation
+    - [ ] Add CLI commands/logs to inspect node state, stake, and block proposals
+    - [ ] Simulate network partitions, node failures, and stake changes
+- [ ] **(Optional) Slashing/penalties**
+    - [ ] Design and implement penalties for misbehavior (e.g., double-signing, invalid blocks)
 
 ---
 

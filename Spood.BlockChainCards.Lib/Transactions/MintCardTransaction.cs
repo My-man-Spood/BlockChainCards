@@ -23,12 +23,13 @@ public class MintCardTransaction : BCTransaction
 
     public override string? Id => IsFullySigned ? ToSignedTransactionBytes().ToHex() : null;
 
-    public MintCardTransaction(byte[] authorityPublicKey, byte[] recipientPublicKey, byte[] card, DateTime timestamp)
+    public MintCardTransaction(byte[] authorityPublicKey, byte[] recipientPublicKey, byte[] card, DateTime timestamp, byte[]? authoritySignature = null)
     {
         AuthorityPublicKey = authorityPublicKey;
         RecipientPublicKey = recipientPublicKey;
         Card = card;
         Timestamp = timestamp;
+        _authoritySignature = authoritySignature;
     }
 
     public MintCardTransaction()

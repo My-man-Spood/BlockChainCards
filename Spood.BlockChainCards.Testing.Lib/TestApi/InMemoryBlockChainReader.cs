@@ -1,7 +1,7 @@
 using Spood.BlockChainCards.Lib;
 using Spood.BlockChainCards.Lib.Transactions;
 
-namespace Spood.BlockChainCards;
+namespace Spood.BlockChainCards.Testing.Lib.TestApi;
 
 public class InMemoryBlockChainReader : IBlockChainReader
 {

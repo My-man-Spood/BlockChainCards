@@ -23,14 +23,40 @@ public class FileBlockChainReader : IBlockChainReader
         }
         else
         {
-            BulkIngest(cardOwnershipStore);
+            CatchupCardOwnership(cardOwnershipStore);
         }
     }
 
-    private void BulkIngest(ICardOwnershipStore cardOwnershipStore)
+    private void CatchupCardOwnership(ICardOwnershipStore cardOwnershipStore)
     {
-        var lastBlockIndex = GetLastBlockIndex();
+        var blocks = ReadBlockChain();
+        var lastBlockIndex = blocks.Count - 1;
+        var safeBlockIndex = Math.Max(0, lastBlockIndex - blockSafetyThreshold);
         var checkpointIndex = cardOwnershipStore.GetCheckpoint();
+        if (checkpointIndex < safeBlockIndex)
+        {
+            BulkIngest();
+        }
+        checkpointIndex = cardOwnershipStore.GetCheckpoint();
+        
+        // Lock cards for unsafe blocks
+        for (int i = checkpointIndex + 1; i <= lastBlockIndex; i++)
+        {
+            var block = blocks[i];
+            foreach (var tx in block.Transactions)
+            {
+                foreach (var card in tx.GetAllCards())
+                {
+                    cardOwnershipStore.LockCard(card, i, tx.Id);
+                }
+            }
+        }
+    }
+
+    private void BulkIngest()
+    {
+        var checkpointIndex = cardOwnershipStore.GetCheckpoint();
+        var lastBlockIndex = GetLastBlockIndex();
         var blocks = ReadBlockChain();
         if (lastBlockIndex - blockSafetyThreshold > checkpointIndex)
         {
@@ -40,19 +66,6 @@ public class FileBlockChainReader : IBlockChainReader
                 cardOwnershipStore.IngestBlock(blocks[i], i);
             }
             cardOwnershipStore.EndBulkIngest();
-        }
-        
-        // Lock cards for unsafe blocks
-        for (int i = lastBlockIndex - blockSafetyThreshold + 1; i <= lastBlockIndex; i++)
-        {
-            var block = blocks[i];
-            foreach (var tx in block.Transactions)
-            {
-                foreach (var card in tx.GetAllCards())
-                {
-                    cardOwnershipStore.LockCard(card.Hash, i, tx.Id);
-                }
-            }
         }
     }
 
@@ -72,7 +85,7 @@ public class FileBlockChainReader : IBlockChainReader
         var lastBlockIndex = GetLastBlockIndex();
         foreach (var card in transaction.GetAllCards())
         {
-            cardOwnershipStore.LockCard(card.Hash, lastBlockIndex, transaction.Id);
+            cardOwnershipStore.LockCard(card, lastBlockIndex, transaction.Id);
         }
         SaveBlockChain(blocks);
     }

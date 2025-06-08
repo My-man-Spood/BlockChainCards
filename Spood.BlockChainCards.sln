@@ -5,9 +5,13 @@ VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards", "Spood.BlockChainCards\Spood.BlockChainCards.csproj", "{F1D69912-DEEC-4077-B756-4FC143990310}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Lib.Tests", "Spood.BlockChainCards.Lib.Tests\Spood.BlockChainCards.Lib.Tests.csproj", "{BCEE909F-5765-44AD-90BE-26084D41AEBF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Lib", "Spood.BlockChainCards.Lib\Spood.BlockChainCards.Lib.csproj", "{73FDFCED-E57D-40C5-A837-F2C1393E86E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Serialization", "Spood.BlockChainCards.Serialization\Spood.BlockChainCards.Serialization.csproj", "{2700561C-6C96-4244-A3A8-EF6AE0DBAA74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Testing.Serialization", "Spood.BlockChainCards.Testing.Serialization\Spood.BlockChainCards.Testing.Serialization.csproj", "{1266FD36-5C7C-4A6D-8A94-974B625AA644}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Testing.Lib", "Spood.BlockChainCards.Testing.Lib\Spood.BlockChainCards.Testing.Lib.csproj", "{38CC9425-275A-3556-F03A-1CA1FBB08CD9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +23,22 @@ Global
 		{F1D69912-DEEC-4077-B756-4FC143990310}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1D69912-DEEC-4077-B756-4FC143990310}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1D69912-DEEC-4077-B756-4FC143990310}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BCEE909F-5765-44AD-90BE-26084D41AEBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BCEE909F-5765-44AD-90BE-26084D41AEBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BCEE909F-5765-44AD-90BE-26084D41AEBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BCEE909F-5765-44AD-90BE-26084D41AEBF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{73FDFCED-E57D-40C5-A837-F2C1393E86E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{73FDFCED-E57D-40C5-A837-F2C1393E86E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73FDFCED-E57D-40C5-A837-F2C1393E86E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73FDFCED-E57D-40C5-A837-F2C1393E86E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2700561C-6C96-4244-A3A8-EF6AE0DBAA74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2700561C-6C96-4244-A3A8-EF6AE0DBAA74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2700561C-6C96-4244-A3A8-EF6AE0DBAA74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2700561C-6C96-4244-A3A8-EF6AE0DBAA74}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1266FD36-5C7C-4A6D-8A94-974B625AA644}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1266FD36-5C7C-4A6D-8A94-974B625AA644}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1266FD36-5C7C-4A6D-8A94-974B625AA644}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1266FD36-5C7C-4A6D-8A94-974B625AA644}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38CC9425-275A-3556-F03A-1CA1FBB08CD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38CC9425-275A-3556-F03A-1CA1FBB08CD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38CC9425-275A-3556-F03A-1CA1FBB08CD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38CC9425-275A-3556-F03A-1CA1FBB08CD9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

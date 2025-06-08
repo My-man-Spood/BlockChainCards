@@ -1,8 +1,9 @@
-﻿using System.Reflection;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Spood.BlockChainCards;
 using Spood.BlockChainCards.Commands;
 using Spood.BlockChainCards.Lib.Utils;
+
+const string BaseDir = "./CLI";
 
 // Setup serializer options
 var serializerOptions = new JsonSerializerOptions
@@ -12,10 +13,16 @@ var serializerOptions = new JsonSerializerOptions
     Converters = { new HexStringJsonConverter() }
 };
 
+if(!Directory.Exists(BaseDir))
+{
+    Directory.CreateDirectory(BaseDir);
+}
+
 // Setup dependencies
-var cardRepo = new FileCardRepository("./cards.json", serializerOptions);
-var blockChainReader = new FileBlockChainReader("./blockchain.json", serializerOptions);
+var cardRepo = new FileCardRepository($"{BaseDir}/cards.json", serializerOptions);
+var cardOwnerShipStore = new SQLiteCardOwnershipStore($"{BaseDir}/card-ownership-db.sqlite");
 var walletReader = new JsonWalletReader(serializerOptions);
+var blockChainReader = new FileBlockChainReader($"{BaseDir}/blockchain.json", serializerOptions, walletReader, cardOwnerShipStore);
 
 // Register command factories
 var commandFactories = new Dictionary<string, Func<ICommand>>(StringComparer.OrdinalIgnoreCase)
