@@ -12,29 +12,32 @@
 ---
 
 ## 🟡 Card Ownership Store Integration (In Progress)
-- [ ] Route all ownership checks and updates through `ICardOwnershipStore`
+- [x] Route all ownership checks and updates through `ICardOwnershipStore`
 - [ ] Add error handling/logging for ingest failures
 - [ ] Ensure checkpointing logic is robust (no missed/duplicate blocks)
 
 ---
 
 ## 🟠 Blockchain Storage Upgrade (Flat File + SQLite Index)
-- [ ] **Switch to storing blocks in batch flat files with binary serialization**
-    - [ ] Design a binary serialization format for blocks (and transactions if needed)
+- [x] **Switch to storing blocks in batch flat files with binary serialization**
+    - [x] Design a binary serialization format for blocks (and transactions if needed)
     - [x] Implement serialization/deserialization methods for blocks
-- [ ] **Batch blocks into files** (e.g., `blocks_0_999.dat`)
-    - [ ] Write new blocks as byte arrays appended to the current file
-    - [ ] Rotate to a new file every N blocks (e.g., 1000)
-- [ ] **SQLite index for fast lookup**
-    - [ ] Create a SQLite table with: block hash, file name, offset, length
-    - [ ] On block write, insert index entry
+- [x] **Batch blocks into files** (e.g., `blocks_0_999.dat`)
+    - [x] Write new blocks as byte arrays appended to the current file
+    - [x] Rotate to a new file every N blocks (e.g., 1000)
+- [x] **SQLite index for fast lookup**
+    - [x] Create a SQLite table with: block hash, file name, offset, length
+    - [x] On block write, insert index entry
     - [ ] On block lookup, query index and read the correct file/offset/length
-- [ ] **Update CLI and core logic to use new storage**
-    - [ ] Refactor block read/write code to use the new flat file + index system
-    - [ ] Add migration tool or script to convert existing JSON chain to new format if needed
+- [x] **Update CLI and core logic to use new storage**
+    - [x] Refactor block read/write code to use the new flat file + index system
 - [ ] (Optional) Benchmark performance and tune batch size or index structure
 
-**Recommended approach for scalability and learning.**
+**Notes (as of 2025-06-09):**
+- Major refactor completed: All block file reading/writing and index logic now use the new BlockFileReader, BlockFileStreamHandler, and BlockFileIndex abstractions. All direct file/offset logic has been encapsulated or removed.
+- Iteration, lookup, and append logic all use the new system.
+- Remaining: performance benchmarking/tuning if desired.
+- All new code avoids tuples and uses explicit utility classes/records for clarity and maintainability.
 
 ---
 
