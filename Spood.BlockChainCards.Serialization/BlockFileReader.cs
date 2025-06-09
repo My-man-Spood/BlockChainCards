@@ -29,7 +29,7 @@ public class BlockFileReader
         return files[^1];
     }
 
-    public AppendBlockResult AppendBlock(BCBlock block)
+    public BlockMetaData AppendBlock(BCBlock block)
     {
         var serializedBlock = BlockSerializer.Serialize(block);
         var openBlockPath = GetOpenBlockFilePath();
@@ -45,7 +45,7 @@ public class BlockFileReader
         var files = Directory.GetFiles(filePath, "*.blk").OrderBy(f => f).ToArray();
         int fileIdx = Array.FindIndex(files, f => Path.GetFileName(f) == Path.GetFileName(openBlockPath));
         int globalIndex = fileIdx * BlocksPerFile + (newCount - 1);
-        return new AppendBlockResult(block.Hash, Path.GetFileName(openBlockPath), globalIndex, (int)blockOffset+4, serializedBlock.Length);
+        return new BlockMetaData(block.Hash, Path.GetFileName(openBlockPath), globalIndex, (int)blockOffset+4, serializedBlock.Length);
     }
 
     public int GetTotalBlockCount()
@@ -65,45 +65,72 @@ public class BlockFileReader
     /// <summary>
     /// Enumerates all blocks in all block files, yielding the block, its AppendBlockResult (file, local index, offset, size), and the global height.
     /// </summary>
-    public IEnumerable<AppendBlockResult> EnumerateBlocksWithResults(int startHeight = 0)
+    // Size of a 32-bit integer in bytes (used for length prefixes and block counts)
+    private const int Int32Size = 4;
+
+    /// <summary>
+    /// Reads a block's length-prefixed data from the stream at the current position.
+    /// </summary>
+    private (int Length, byte[] Data) ReadBlockData(Stream stream)
+    {
+        int blockLen = stream.ReadInt32();
+        var blockData = new byte[blockLen];
+        stream.Read(blockData, 0, blockLen);
+        return (blockLen, blockData);
+    }
+
+    /// <summary>
+    /// Enumerates blocks starting from a global height, with optimized file and block skipping.
+    /// </summary>
+    /// <param name="startHeight">The global block height to start from</param>
+    public IEnumerable<BlockMetaData> EnumerateBlocksWithResults(int startHeight = 0)
     {
         var files = Directory.GetFiles(filePath, "*.blk").OrderBy(f => f).ToArray();
-        int globalHeight = 0;
-        for (int f = 0; f < files.Length; f++)
+        if (files.Length == 0)
+            yield break;
+            
+        // Calculate which file to start from and which block within that file
+        int startFileIndex = startHeight / BlocksPerFile;
+        int startBlockIndex = startHeight % BlocksPerFile;
+        int globalHeight = startFileIndex * BlocksPerFile;
+        
+        // Process each file from the starting file onwards
+        for (int fileIndex = startFileIndex; fileIndex < files.Length; fileIndex++)
         {
-            var file = files[f];
-            using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var countBuffer = new byte[4];
-            stream.Read(countBuffer, 0, 4);
-            int blockCount = BitConverter.ToInt32(countBuffer, 0);
-            int offset = 4;
-            for (int i = 0; i < blockCount; i++)
+            var file = files[fileIndex];
+            using var stream = new BlockFileStreamHandler(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+            
+            int blockCount = stream.ReadBlockCount();
+            if (blockCount == 0) continue;
+            
+            int blockIdxToStartFrom = (fileIndex == startFileIndex) ? startBlockIndex : 0;
+            
+            stream.PrepareToReadFrom(blockIdxToStartFrom, blockCount);
+            
+            globalHeight += blockIdxToStartFrom;
+            
+            // Process the remaining blocks in this file
+            for (int blockIdx = blockIdxToStartFrom; blockIdx < blockCount; blockIdx++)
             {
-                if (globalHeight >= startHeight)
-                {
-                    stream.Seek(offset, SeekOrigin.Begin);
-                    var lenBuffer = new byte[4];
-                    stream.Read(lenBuffer, 0, 4);
-                    int blockLen = BitConverter.ToInt32(lenBuffer, 0);
-                    var blockData = new byte[blockLen];
-                    stream.Read(blockData, 0, blockLen);
-                    var block = BlockSerializer.Deserialize(blockData);
-                    var result = new AppendBlockResult(block.Hash, Path.GetFileName(file), globalHeight, offset + 4, blockLen);
-                    yield return result;
-                    offset += 4 + blockLen;
-                }
-                else
-                {
-                    stream.Seek(offset, SeekOrigin.Begin);
-                    var lenBuffer = new byte[4];
-                    stream.Read(lenBuffer, 0, 4);
-                    int blockLen = BitConverter.ToInt32(lenBuffer, 0);
-                    offset += 4 + blockLen;
-                }
+                // Read block at current position
+                int currentOffset = (int)stream.Position;
+                BlockReadResult readResult = stream.ReadBlockAt(currentOffset);
+                
+                // Create and yield result
+                var result = new BlockMetaData(
+                    readResult.Block.Hash, 
+                    stream.FileName, 
+                    globalHeight, 
+                    readResult.DataOffset, 
+                    readResult.Length);
+                yield return result;
+                
+                // Increment global height for next block
                 globalHeight++;
             }
         }
     }
+
 
 
 
