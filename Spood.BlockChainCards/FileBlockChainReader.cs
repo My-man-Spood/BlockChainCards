@@ -47,7 +47,7 @@ public class FileBlockChainReader : IBlockChainReader
             return;
 
         blockFileIndex.BeginBulkIngest();
-        foreach (var result in blockFileReader.EnumerateBlocksWithResults(indexedHeight))
+        foreach (var result in blockFileReader.EnumerateBlocksMetaData(indexedHeight))
         {
             blockFileIndex.IngestBlock(result.BlockHash, result.BlockIndexGlobal, result.BlockFilePath, result.BlockOffset, result.BlockSize);
         }

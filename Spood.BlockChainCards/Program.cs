@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using Spood.BlockChainCards;
 using Spood.BlockChainCards.Commands;
-using Spood.BlockChainCards.Lib.Utils;
+using Spood.BlockChainCards.Lib.ByteUtils;
 
 const string BaseDir = "./CLI";
 

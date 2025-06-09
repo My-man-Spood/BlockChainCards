@@ -1,7 +1,7 @@
 namespace Spood.BlockChainCards.Serialization;
 
 using Spood.BlockChainCards.Lib;
-using Spood.BlockChainCards.Lib.Utils;
+using Spood.BlockChainCards.Lib.ByteUtils;
 
 public class BlockFileReader
 {
@@ -31,21 +31,34 @@ public class BlockFileReader
 
     public BlockMetaData AppendBlock(BCBlock block)
     {
+        // Serialize the block
         var serializedBlock = BlockSerializer.Serialize(block);
         var openBlockPath = GetOpenBlockFilePath();
 
-        using var stream = new FileStream(openBlockPath, FileMode.Open, FileAccess.Write, FileShare.None);
-        var blockOffset = stream.Seek(0, SeekOrigin.End);
-        stream.Write(serializedBlock.LengthBytesLE(), 0, 4);
-        stream.Write(serializedBlock, 0, serializedBlock.Length);
-        int newCount = IncrementBlockCount(stream);
+        // Use the stream handler for appending
+        using var stream = new BlockFileStreamHandler(openBlockPath, FileMode.Open, FileAccess.Write, FileShare.None);
+        
+        // Append the serialized block and get its offset
+        int blockDataOffset = stream.AppendSerializedBlock(serializedBlock);
+        
+        // Increment and get the new block count
+        int newCount = stream.IncrementBlockCount();
 
+        // Rotate block file if needed
         RotateBlockFileIfFull(openBlockPath, newCount);
-        // Add 4 to blockOffset to account for the length prefix
+        
+        // Calculate the global block index
         var files = Directory.GetFiles(filePath, "*.blk").OrderBy(f => f).ToArray();
         int fileIdx = Array.FindIndex(files, f => Path.GetFileName(f) == Path.GetFileName(openBlockPath));
         int globalIndex = fileIdx * BlocksPerFile + (newCount - 1);
-        return new BlockMetaData(block.Hash, Path.GetFileName(openBlockPath), globalIndex, (int)blockOffset+4, serializedBlock.Length);
+        
+        // Return metadata about the appended block
+        return new BlockMetaData(
+            block.Hash, 
+            Path.GetFileName(openBlockPath), 
+            globalIndex, 
+            blockDataOffset, 
+            serializedBlock.Length);
     }
 
     public int GetTotalBlockCount()
@@ -57,7 +70,7 @@ public class BlockFileReader
         using var stream = new FileStream(lastFile, FileMode.Open, FileAccess.Read, FileShare.Read);
         var countBuffer = new byte[4];
         stream.Read(countBuffer, 0, 4);
-        total += BitConverter.ToInt32(countBuffer);
+        total += countBuffer.ToInt32();
 
         return total;
     }
@@ -83,7 +96,7 @@ public class BlockFileReader
     /// Enumerates blocks starting from a global height, with optimized file and block skipping.
     /// </summary>
     /// <param name="startHeight">The global block height to start from</param>
-    public IEnumerable<BlockMetaData> EnumerateBlocksWithResults(int startHeight = 0)
+    public IEnumerable<BlockMetaData> EnumerateBlocksMetaData(int startHeight = 0)
     {
         var files = Directory.GetFiles(filePath, "*.blk").OrderBy(f => f).ToArray();
         if (files.Length == 0)
@@ -113,8 +126,7 @@ public class BlockFileReader
             for (int blockIdx = blockIdxToStartFrom; blockIdx < blockCount; blockIdx++)
             {
                 // Read block at current position
-                int currentOffset = (int)stream.Position;
-                BlockReadResult readResult = stream.ReadBlockAt(currentOffset);
+                BlockReadResult readResult = stream.ReadBlockAtCurrentPosition();
                 
                 // Create and yield result
                 var result = new BlockMetaData(
@@ -130,9 +142,6 @@ public class BlockFileReader
             }
         }
     }
-
-
-
 
     public static BCBlock ReadBlockDirect(string blockFilePath, int blockOffset)
     {

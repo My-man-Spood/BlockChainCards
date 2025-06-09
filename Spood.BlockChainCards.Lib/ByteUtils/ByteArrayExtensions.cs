@@ -1,4 +1,4 @@
-﻿namespace Spood.BlockChainCards.Lib.Utils
+﻿namespace Spood.BlockChainCards.Lib.ByteUtils
 {
     public static class ByteArrayExtensions
     {
@@ -16,6 +16,18 @@
             if (!BitConverter.IsLittleEndian)
                 Array.Reverse(lengthBytes);
             return lengthBytes;
+        }
+
+        public static int ToInt32(this byte[] bytes)
+        {
+            if (!BitConverter.IsLittleEndian)
+                Array.Reverse(bytes);
+            return BitConverter.ToInt32(bytes, 0);
+        }
+
+        public static byte[] AsBytes(this int value)
+        {
+            return BitConverter.GetBytes(value);
         }
     }
 }

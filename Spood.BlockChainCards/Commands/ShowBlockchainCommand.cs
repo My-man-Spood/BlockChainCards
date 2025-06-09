@@ -2,7 +2,7 @@ using System.Text.Json;
 using CommandLine;
 using Spood.BlockChainCards.Lib;
 using Spood.BlockChainCards.Lib.Transactions;
-using Spood.BlockChainCards.Lib.Utils;
+using Spood.BlockChainCards.Lib.ByteUtils;
 
 namespace Spood.BlockChainCards.Commands;
 

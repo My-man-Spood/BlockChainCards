@@ -1,6 +1,6 @@
 namespace Spood.BlockChainCards.Serialization;
 
-using Spood.BlockChainCards.Lib;
+using Spood.BlockChainCards.Lib.ByteUtils;
 
 public class BlockFileStreamHandler : IDisposable
 {
@@ -76,8 +76,18 @@ public class BlockFileStreamHandler : IDisposable
     public BlockReadResult ReadBlockAt(int blockOffset)
     {
         stream.Position = blockOffset;
+        return ReadBlockAtCurrentPosition();
+    }
+    
+    /// <summary>
+    /// Reads a block from the current stream position.
+    /// </summary>
+    /// <returns>A BlockReadResult containing the block, its length, and the data offset</returns>
+    public BlockReadResult ReadBlockAtCurrentPosition()
+    {
+        int currentPosition = (int)stream.Position;
         int blockLength = stream.ReadInt32();
-        int dataOffset = blockOffset + Int32Size;
+        int dataOffset = currentPosition + Int32Size;
         
         var blockData = new byte[blockLength];
         stream.Read(blockData, 0, blockLength);
@@ -103,9 +113,54 @@ public class BlockFileStreamHandler : IDisposable
     public int ReadInt32() => stream.ReadInt32();
     
     /// <summary>
-    /// Gets or sets the position within the stream.
+    /// Gets the position within the stream.
     /// </summary>
     public long Position => stream.Position;
+    
+    /// <summary>
+    /// Appends a serialized block to the end of the file.
+    /// </summary>
+    /// <param name="serializedBlock">The serialized block data to append</param>
+    /// <returns>The offset where the block data begins (after length prefix)</returns>
+    public int AppendSerializedBlock(byte[] serializedBlock)
+    {
+        // Position at the end of the file
+        stream.Position = stream.Length;
+        long blockOffset = stream.Position;
+        
+        // Write length prefix followed by block data
+        byte[] lengthBytes = serializedBlock.Length.AsBytes();
+        stream.Write(lengthBytes, 0, Int32Size);
+        stream.Write(serializedBlock, 0, serializedBlock.Length);
+        
+        // Return the offset of the actual block data (after length prefix)
+        return (int)blockOffset + Int32Size;
+    }
+    
+    /// <summary>
+    /// Reads and increments the block count in the file header.
+    /// </summary>
+    /// <returns>The new block count after incrementing</returns>
+    public int IncrementBlockCount()
+    {
+        // Store current position
+        long originalPosition = stream.Position;
+        
+        // Go to beginning of file and read current count
+        stream.Position = 0;
+        int currentCount = stream.ReadInt32();
+        
+        // Increment count and write it back
+        int newCount = currentCount + 1;
+        stream.Position = 0;
+        byte[] countBytes = newCount.AsBytes();
+        stream.Write(countBytes, 0, Int32Size);
+        
+        // Restore original position
+        stream.Position = originalPosition;
+        
+        return newCount;
+    }
 
     public void Dispose()
     {

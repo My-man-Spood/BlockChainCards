@@ -1,4 +1,4 @@
-using Spood.BlockChainCards.Lib.Utils;
+using Spood.BlockChainCards.Lib.ByteUtils;
 using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 
