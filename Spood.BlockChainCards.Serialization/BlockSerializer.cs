@@ -1,17 +1,14 @@
 using Spood.BlockChainCards.Lib;
 using Spood.BlockChainCards.Lib.Transactions;
 using Spood.BlockChainCards.Serialization.Transactions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Spood.BlockChainCards.Serialization;
 
-public class BlockSerializer
+public static class BlockSerializer
 {
     private const byte modelVersion = 1;
 
-    public byte[] Serialize(BCBlock block)
+    public static byte[] Serialize(BCBlock block)
     {
         // Prepare
         var prevHash = block.PreviousHash;
@@ -49,7 +46,7 @@ public class BlockSerializer
         return buffer;
     }
 
-    public BCBlock Deserialize(byte[] bytes)
+    public static BCBlock Deserialize(byte[] bytes)
     {
         int offset = 0;
         byte version = bytes[offset++];

@@ -22,7 +22,7 @@ if(!Directory.Exists(BaseDir))
 var cardRepo = new FileCardRepository($"{BaseDir}/cards.json", serializerOptions);
 var cardOwnerShipStore = new SQLiteCardOwnershipStore($"{BaseDir}/card-ownership-db.sqlite");
 var walletReader = new JsonWalletReader(serializerOptions);
-var blockChainReader = new FileBlockChainReader($"{BaseDir}/blockchain.json", serializerOptions, walletReader, cardOwnerShipStore);
+var blockChainReader = new FileBlockChainReader($"{BaseDir}/Blockchain", serializerOptions, walletReader, cardOwnerShipStore);
 
 // Register command factories
 var commandFactories = new Dictionary<string, Func<ICommand>>(StringComparer.OrdinalIgnoreCase)
