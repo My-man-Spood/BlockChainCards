@@ -7,13 +7,10 @@ namespace Spood.BlockChainCards.Lib.Transactions;
 
 public class MintCardTransaction : BCTransaction
 {
-    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] AuthorityPublicKey { get; init; }
 
-    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] RecipientPublicKey { get; init; }
 
-    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] Card { get; init; }
 
     private byte[]? _authoritySignature;

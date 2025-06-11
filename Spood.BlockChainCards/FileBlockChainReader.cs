@@ -15,10 +15,9 @@ public class FileBlockChainReader : IBlockChainReader
     private readonly BlockFileIndex blockFileIndex;
     private readonly BlockFileReader blockFileReader;
     
-    public FileBlockChainReader(string filePath, JsonSerializerOptions serializerOptions, IWalletReader walletReader, ICardOwnershipStore cardOwnershipStore, BlockFileIndex blockFileIndex, BlockFileReader blockFileReader)
+    public FileBlockChainReader(string filePath, IWalletReader walletReader, ICardOwnershipStore cardOwnershipStore)
     {
         this.filePath = filePath;
-        this.serializerOptions = serializerOptions;
         this.walletReader = walletReader;
         this.cardOwnershipStore = cardOwnershipStore;
         this.blockFileIndex = new BlockFileIndex(filePath);

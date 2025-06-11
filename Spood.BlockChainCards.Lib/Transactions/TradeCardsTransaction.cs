@@ -7,9 +7,7 @@ namespace Spood.BlockChainCards.Lib.Transactions;
 
 public class TradeCardsTransaction : BCTransaction
 {
-    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] User1PublicKey { get; set; }
-    [JsonConverter(typeof(HexStringJsonConverter))]
     public byte[] User2PublicKey { get; set; }
     public IEnumerable<byte[]> CardsFromUser1 { get; set; }
     public IEnumerable<byte[]> CardsFromUser2 { get; set; }

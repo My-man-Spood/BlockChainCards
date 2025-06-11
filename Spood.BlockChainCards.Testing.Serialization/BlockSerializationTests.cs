@@ -59,7 +59,7 @@ public class BlockSerializationTests
             Timestamp = DateTime.Parse("2023-01-01T00:00:00Z"),
         };
         var txBytes = new List<byte[]>();
-        var bytes = new BlockSerializer().Serialize(block);
+        var bytes = BlockSerializer.Serialize(block);
         var format = MakeFormat(block, txBytes);
         ValidateFormat(format, bytes, txBytes);
     }
@@ -77,7 +77,7 @@ public class BlockSerializationTests
             Timestamp = DateTime.Parse("2023-02-02T00:00:00Z"),
         };
         var txBytes = new List<byte[]> { new MintCardTransactionSerializer().Serialize(mintTx) };
-        var bytes = new BlockSerializer().Serialize(block);
+        var bytes = BlockSerializer.Serialize(block);
         var format = MakeFormat(block, txBytes);
         ValidateFormat(format, bytes, txBytes);
     }
@@ -96,7 +96,7 @@ public class BlockSerializationTests
             Timestamp = DateTime.Parse("2023-03-02T00:00:00Z"),
         };
         var txBytes = new List<byte[]> { new TradeCardsTransactionSerializer().Serialize(tradeTx) };
-        var bytes = new BlockSerializer().Serialize(block);
+        var bytes = BlockSerializer.Serialize(block);
         var format = MakeFormat(block, txBytes);
         ValidateFormat(format, bytes, txBytes);
     }
@@ -116,8 +116,8 @@ public class BlockSerializationTests
             Transactions = new List<BCTransaction> { mintTx, tradeTx },
             Timestamp = DateTime.Parse("2023-04-03T00:00:00Z"),
         };
-        var bytes = new BlockSerializer().Serialize(block);
-        var deserialized = new BlockSerializer().Deserialize(bytes);
+        var bytes = BlockSerializer.Serialize(block);
+        var deserialized = BlockSerializer.Deserialize(bytes);
         Assert.Equal(block.PreviousHash, deserialized.PreviousHash);
         Assert.Equal(block.Timestamp, deserialized.Timestamp);
         Assert.Equal(block.Transactions.Count, deserialized.Transactions.Count);
