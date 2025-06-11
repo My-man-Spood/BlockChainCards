@@ -1,4 +1,4 @@
-namespace Spood.BlockChainCards.Serialization;
+namespace Spood.BlockChainCards;
 
 public class BlockIndexMetaData
 {

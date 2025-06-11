@@ -1,5 +1,7 @@
 using System.Data;
 using Microsoft.Data.Sqlite;
+using Spood.BlockChainCards.Lib.Configuration;
+using Spood.BlockChainCards.Serialization;
 
 namespace Spood.BlockChainCards.Serialization
 {
@@ -13,10 +15,21 @@ namespace Spood.BlockChainCards.Serialization
         private SqliteTransaction? _bulkTxn;
         private bool _schemaEnsured;
         private SqliteCommand? _bulkAddBlockCmd;
+        private readonly PathConfiguration? _pathConfig;
 
+        // Constructor with explicit path for backward compatibility
         public BlockFileIndex(string directory)
         {
             _dbPath = Path.Combine(directory, "block_index.sqlite");
+            _pathConfig = null; // Not using PathConfiguration
+            EnsureSchema();
+        }
+        
+        // Constructor with PathConfiguration for better path management
+        public BlockFileIndex(PathConfiguration pathConfig)
+        {
+            _pathConfig = pathConfig;
+            _dbPath = pathConfig.BlockIndexFile; // Uses the path from configuration
             EnsureSchema();
         }
 
@@ -106,20 +119,22 @@ namespace Spood.BlockChainCards.Serialization
             _bulkAddBlockCmd.ExecuteNonQuery();
         }
 
-        public (string file, int offset, int length)? LookupByHash(byte[] hash)
+        public BlockIndexMetaData? LookupByHash(byte[] hash)
         {
             using var conn = new SqliteConnection($"Data Source={_dbPath};");
             conn.Open();
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT file, offset, length FROM blocks WHERE hash = @hash;";
+            cmd.CommandText = "SELECT file, height, offset, length FROM blocks WHERE hash = @hash;";
             cmd.Parameters.Add("@hash", SqliteType.Blob, 32).Value = hash;
             using var reader = cmd.ExecuteReader();
             if (reader.Read())
             {
-                return (
+                return new BlockIndexMetaData(
+                    hash,
                     reader.GetString(0),
                     reader.GetInt32(1),
-                    reader.GetInt32(2)
+                    reader.GetInt32(2),
+                    reader.GetInt32(3)
                 );
             }
             return null;

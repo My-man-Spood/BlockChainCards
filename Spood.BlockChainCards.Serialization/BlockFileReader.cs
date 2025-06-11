@@ -2,6 +2,7 @@ namespace Spood.BlockChainCards.Serialization;
 
 using Spood.BlockChainCards.Lib;
 using Spood.BlockChainCards.Lib.ByteUtils;
+using System.IO;
 
 public class BlockFileReader
 {
@@ -33,10 +34,10 @@ public class BlockFileReader
 
     public void InitializeBlockChain()
     {
-        var initialBlockPath = $"_{0:D6}.blk";
+        var initialBlockPath = Path.Combine(filePath, $"_{0:D6}.blk");
         if (File.Exists(initialBlockPath))
         {
-            throw new InvalidOperationException("Block file already exists");
+            return;
         }
 
         CreateEmptyBlockFile(initialBlockPath);
@@ -164,9 +165,9 @@ public class BlockFileReader
         }
     }
 
-    public static BCBlock ReadBlockDirect(string blockFilePath, int blockOffset, int size)
+    public BCBlock ReadBlockDirect(string blockFilePath, int blockOffset, int size)
     {
-        using var stream = new FileStream(blockFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var stream = new FileStream(Path.Combine(filePath, blockFilePath), FileMode.Open, FileAccess.Read, FileShare.Read);
         stream.Seek(blockOffset, SeekOrigin.Begin);
         var blockData = new byte[size];
         stream.Read(blockData, 0, size);
@@ -208,18 +209,37 @@ public class BlockFileReader
         if (blockCount == BlocksPerFile)
         {
             CloseBlock(openBlockPath);
-            CreateEmptyBlockFile(GetNextBlockFilePath(openBlockPath));
+            
+            // Get the directory path and get next file name
+            string directory = Path.GetDirectoryName(openBlockPath) ?? "";
+            string nextFileName = GetNextBlockFilePath(openBlockPath);
+            string nextFilePath = Path.Combine(directory, nextFileName);
+            
+            CreateEmptyBlockFile(nextFilePath);
         }
     }
 
     private static void CloseBlock(string openBlockPath)
     {
-        File.Move(openBlockPath, openBlockPath.Replace("_", ""));
+        // Create the new path in the same directory as the original file
+        string directory = Path.GetDirectoryName(openBlockPath) ?? "";
+        string fileName = Path.GetFileName(openBlockPath);
+        string newFileName = fileName.Replace("_", "");
+        string newPath = Path.Combine(directory, newFileName);
+        
+        File.Move(openBlockPath, newPath);
     }
 
     private static string GetNextBlockFilePath(string currentBlockFilePath)
     {
-        var nextNumber = int.Parse(currentBlockFilePath.Replace("_", "")) + 1;
+        // Extract just the filename
+        string fileName = Path.GetFileName(currentBlockFilePath);
+        
+        // Remove the prefix and get the number
+        string numberPart = fileName.Replace("_", "").Split('.')[0];
+        int nextNumber = int.Parse(numberPart) + 1;
+        
+        // Create the new filename only (not full path)
         return $"_{nextNumber:D6}.blk";
     }
     

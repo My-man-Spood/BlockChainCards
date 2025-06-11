@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Spood.BlockChainCards.Lib;
+using Spood.BlockChainCards.Lib.Configuration;
 using Spood.BlockChainCards.Lib.Transactions;
 using Spood.BlockChainCards.Serialization;
 
@@ -8,24 +9,31 @@ namespace Spood.BlockChainCards;
 public class FileBlockChainReader : IBlockChainReader
 {
     private const int blockSafetyThreshold = 5;
-    private readonly string filePath;
+    private readonly string blockchainPath;
     private readonly JsonSerializerOptions serializerOptions;
     private readonly IWalletReader walletReader;
     private readonly ICardOwnershipStore cardOwnershipStore;
     private readonly BlockFileIndex blockFileIndex;
     private readonly BlockFileReader blockFileReader;
+    private readonly PathConfiguration pathConfig;
     
-    public FileBlockChainReader(string filePath, IWalletReader walletReader, ICardOwnershipStore cardOwnershipStore)
+    public FileBlockChainReader(string blockchainPath, IWalletReader walletReader, ICardOwnershipStore cardOwnershipStore, PathConfiguration pathConfig)
     {
-        this.filePath = filePath;
+        this.blockchainPath = blockchainPath;
         this.walletReader = walletReader;
         this.cardOwnershipStore = cardOwnershipStore;
+        this.pathConfig = pathConfig;
+        
+        // Path is now managed by PathConfiguration
+        // pathConfig.EnsureDirectoriesExist() should be called before this constructor
+        
         // Robust, idempotent initialization
-        this.blockFileReader = new BlockFileReader(filePath);
+        this.blockFileReader = new BlockFileReader(blockchainPath);
         this.blockFileReader.Initialize();
-        this.blockFileIndex = new BlockFileIndex(filePath);
+        // Use the PathConfiguration-based constructor for BlockFileIndex
+        this.blockFileIndex = new BlockFileIndex(pathConfig);
         this.blockFileIndex.Initialize();
-        InitializeFolders(); // Optionally keep for legacy/other folders
+        
         if (blockFileReader.GetTotalBlockCount() == 0)
         {
             // Only create genesis if no blocks exist
@@ -40,17 +48,7 @@ public class FileBlockChainReader : IBlockChainReader
         }
     }
 
-    private void InitializeFolders()
-    {
-        if (!Directory.Exists(filePath))
-        {
-            Directory.CreateDirectory(filePath);
-        }
-        if (!Directory.Exists(Path.Combine(filePath, "Blockchain")))
-        {
-            Directory.CreateDirectory(Path.Combine(filePath, "Blockchain"));
-        }
-    }
+    // Folder initialization is now handled by PathConfiguration
 
     /// <summary>
     /// Catches up the block index by using BlockFileReader.EnumerateBlocksWithResults, inserting all unindexed blocks.
@@ -86,7 +84,7 @@ public class FileBlockChainReader : IBlockChainReader
         for (int i = checkpointIndex + 1; i <= lastBlockIndex; i++)
         {
             var meta = blockFileIndex.LookupByHeight(i);
-            var block = BlockFileReader.ReadBlockDirect(meta.FilePath, meta.Offset, meta.Size);
+            var block = blockFileReader.ReadBlockDirect(meta.FilePath, meta.Offset, meta.Size);
             foreach (var tx in block.Transactions)
             {
                 foreach (var card in tx.GetAllCards())
@@ -109,7 +107,7 @@ public class FileBlockChainReader : IBlockChainReader
             for (int i = checkpointIndex; i <= lastBlockIndex - blockSafetyThreshold; i++)
             {
                 var meta = blockFileIndex.LookupByHeight(i);
-                var block = BlockFileReader.ReadBlockDirect(meta.FilePath, meta.Offset, meta.Size);
+                var block = blockFileReader.ReadBlockDirect(meta.FilePath, meta.Offset, meta.Size);
                 cardOwnershipStore.IngestBlock(block, i);
             }
             cardOwnershipStore.EndBulkIngest();
@@ -154,7 +152,7 @@ public class FileBlockChainReader : IBlockChainReader
 
     private bool ValidateMintCardTransaction(MintCardTransaction transaction)
     {
-        var authorityWallet = walletReader.LoadWallet("./Authority-wallet.json");
+        var authorityWallet = walletReader.LoadWallet(pathConfig.AuthorityWalletPath);
         var isAuthorityPublicKey = transaction.AuthorityPublicKey.SequenceEqual(authorityWallet.PublicKey);
 
         return isAuthorityPublicKey && transaction.VerifySignature();
