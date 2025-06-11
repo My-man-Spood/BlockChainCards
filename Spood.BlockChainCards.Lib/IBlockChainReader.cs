@@ -5,6 +5,4 @@ namespace Spood.BlockChainCards.Lib;
 public interface IBlockChainReader
 {
     void AddTransaction(BCTransaction transaction);
-    IReadOnlyList<BCBlock> ReadBlockChain();
-    void SaveBlockChain(IEnumerable<BCBlock> blocks);
 }

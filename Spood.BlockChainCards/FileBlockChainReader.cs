@@ -20,20 +20,37 @@ public class FileBlockChainReader : IBlockChainReader
         this.filePath = filePath;
         this.walletReader = walletReader;
         this.cardOwnershipStore = cardOwnershipStore;
-        this.blockFileIndex = new BlockFileIndex(filePath);
+        // Robust, idempotent initialization
         this.blockFileReader = new BlockFileReader(filePath);
-        if (!Directory.Exists(filePath))
+        this.blockFileReader.Initialize();
+        this.blockFileIndex = new BlockFileIndex(filePath);
+        this.blockFileIndex.Initialize();
+        InitializeFolders(); // Optionally keep for legacy/other folders
+        if (blockFileReader.GetTotalBlockCount() == 0)
         {
-            InitializeBlockChain();
+            // Only create genesis if no blocks exist
+            var genesisBlock = new BCBlock(Enumerable.Repeat((byte)153,32).ToArray(), []);
+            var appendBlockResult = blockFileReader.AppendBlock(genesisBlock);
+            blockFileIndex.AddBlock(genesisBlock.Hash, appendBlockResult.BlockIndexGlobal, appendBlockResult.BlockFilePath, appendBlockResult.BlockOffset, appendBlockResult.BlockSize);
         }
         else
         {
-            CatchupCardOwnership(cardOwnershipStore);
             CatchupBlockIndex();
+            CatchupCardOwnership(cardOwnershipStore);
         }
     }
 
-
+    private void InitializeFolders()
+    {
+        if (!Directory.Exists(filePath))
+        {
+            Directory.CreateDirectory(filePath);
+        }
+        if (!Directory.Exists(Path.Combine(filePath, "Blockchain")))
+        {
+            Directory.CreateDirectory(Path.Combine(filePath, "Blockchain"));
+        }
+    }
 
     /// <summary>
     /// Catches up the block index by using BlockFileReader.EnumerateBlocksWithResults, inserting all unindexed blocks.
@@ -56,8 +73,7 @@ public class FileBlockChainReader : IBlockChainReader
 
     private void CatchupCardOwnership(ICardOwnershipStore cardOwnershipStore)
     {
-        var blocks = ReadBlockChain();
-        var lastBlockIndex = blocks.Count - 1;
+        var lastBlockIndex = blockFileIndex.GetTotalBlockCount() - 1;
         var safeBlockIndex = Math.Max(0, lastBlockIndex - blockSafetyThreshold);
         var checkpointIndex = cardOwnershipStore.GetCheckpoint();
         if (checkpointIndex < safeBlockIndex)
@@ -69,7 +85,8 @@ public class FileBlockChainReader : IBlockChainReader
         // Lock cards for unsafe blocks
         for (int i = checkpointIndex + 1; i <= lastBlockIndex; i++)
         {
-            var block = blocks[i];
+            var meta = blockFileIndex.LookupByHeight(i);
+            var block = BlockFileReader.ReadBlockDirect(meta.FilePath, meta.Offset, meta.Size);
             foreach (var tx in block.Transactions)
             {
                 foreach (var card in tx.GetAllCards())
@@ -83,14 +100,17 @@ public class FileBlockChainReader : IBlockChainReader
     private void BulkIngest()
     {
         var checkpointIndex = cardOwnershipStore.GetCheckpoint();
-        var lastBlockIndex = GetLastBlockIndex();
-        var blocks = ReadBlockChain();
-        if (lastBlockIndex - blockSafetyThreshold > checkpointIndex)
+        var lastBlockIndex = blockFileIndex.GetTotalBlockCount() - 1;
+        var safeEnd = lastBlockIndex - blockSafetyThreshold;
+
+        if (safeEnd > checkpointIndex)
         {
             cardOwnershipStore.BeginBulkIngest();
             for (int i = checkpointIndex; i <= lastBlockIndex - blockSafetyThreshold; i++)
             {
-                cardOwnershipStore.IngestBlock(blocks[i], i);
+                var meta = blockFileIndex.LookupByHeight(i);
+                var block = BlockFileReader.ReadBlockDirect(meta.FilePath, meta.Offset, meta.Size);
+                cardOwnershipStore.IngestBlock(block, i);
             }
             cardOwnershipStore.EndBulkIngest();
         }
@@ -98,6 +118,7 @@ public class FileBlockChainReader : IBlockChainReader
 
     public void InitializeBlockChain()
     {
+        blockFileIndex.Initialize();
         var genesisBlock = new BCBlock(Enumerable.Repeat((byte)153,32).ToArray(), []);
         blockFileReader.InitializeBlockChain();
         var appendBlockResult = blockFileReader.AppendBlock(genesisBlock);
@@ -107,13 +128,15 @@ public class FileBlockChainReader : IBlockChainReader
     public void AddTransaction(BCTransaction transaction)
     {
         ValidateTransaction(transaction);
-        var blocks = ReadBlockChain().ToList();
-        var lastBlockIndex = GetLastBlockIndex();
+        var lastBlockIndex = blockFileIndex.GetTotalBlockCount() - 1;
+        var prev = blockFileIndex.LookupByHeight(lastBlockIndex);
+
+        var block = new BCBlock(prev.Hash, [transaction]);
         foreach (var card in transaction.GetAllCards())
         {
             cardOwnershipStore.LockCard(card, lastBlockIndex, transaction.Id);
         }
-        SaveBlockChain(blocks);
+        blockFileReader.AppendBlock(block);
     }
 
     private bool ValidateTransaction(BCTransaction transaction)
@@ -153,27 +176,5 @@ public class FileBlockChainReader : IBlockChainReader
                 return false;
         }
         return true;
-    }
-
-    public IReadOnlyList<BCBlock> ReadBlockChain()
-    {
-        if (!File.Exists(filePath))
-            return new List<BCBlock>();
-        var json = File.ReadAllText(filePath);
-        return JsonSerializer.Deserialize<List<BCBlock>>(json, serializerOptions)!;
-    }
-
-    public int GetLastBlockIndex()
-    {
-        var blocks = ReadBlockChain();
-        if (!blocks.Any())
-            throw new InvalidOperationException("No blocks exist in the blockchain.");
-        return blocks.Count - 1;
-    }
-
-    public void SaveBlockChain(IEnumerable<BCBlock> blocks)
-    {
-        var json = JsonSerializer.Serialize(blocks, serializerOptions);
-        File.WriteAllText(filePath, json);
     }
 }

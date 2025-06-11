@@ -12,6 +12,25 @@ public class BlockFileReader
         this.filePath = filePath;
     }
 
+    public void Initialize()
+    {
+        // Ensure the blockchain folder exists
+        if (!Directory.Exists(filePath))
+            Directory.CreateDirectory(filePath);
+
+        // Ensure at least one block file exists (genesis file)
+        var blockFiles = Directory.GetFiles(filePath, "*.blk");
+        if (blockFiles.Length == 0)
+        {
+            var genesisFile = Path.Combine(filePath, "_000000.blk");
+            if (!File.Exists(genesisFile))
+            {
+                using var filestream = File.Create(genesisFile);
+                filestream.Write(BitConverter.GetBytes(0), 0, 4); // initial block count 0
+            }
+        }
+    }
+
     public void InitializeBlockChain()
     {
         var initialBlockPath = $"_{0:D6}.blk";
@@ -36,7 +55,7 @@ public class BlockFileReader
         var openBlockPath = GetOpenBlockFilePath();
 
         // Use the stream handler for appending
-        using var stream = new BlockFileStreamHandler(openBlockPath, FileMode.Open, FileAccess.Write, FileShare.None);
+        using var stream = new BlockFileStreamHandler(openBlockPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
         
         // Append the serialized block and get its offset
         int blockDataOffset = stream.AppendSerializedBlock(serializedBlock);
@@ -65,7 +84,9 @@ public class BlockFileReader
     {
         var total = 0;
         var files = Directory.GetFiles(filePath, "*.blk");
-        total += (files.Length-1) * BlocksPerFile; 
+        if (files.Length == 0)
+            return 0;
+        total += (files.Length - 1) * BlocksPerFile;
         var lastFile = files[^1];
         using var stream = new FileStream(lastFile, FileMode.Open, FileAccess.Read, FileShare.Read);
         var countBuffer = new byte[4];
@@ -143,15 +164,12 @@ public class BlockFileReader
         }
     }
 
-    public static BCBlock ReadBlockDirect(string blockFilePath, int blockOffset)
+    public static BCBlock ReadBlockDirect(string blockFilePath, int blockOffset, int size)
     {
         using var stream = new FileStream(blockFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         stream.Seek(blockOffset, SeekOrigin.Begin);
-        var blockLengthBytes = new byte[4];
-        stream.Read(blockLengthBytes, 0, 4);
-        var blockLength = BitConverter.ToInt32(blockLengthBytes, 0);
-        var blockData = new byte[blockLength];
-        stream.Read(blockData, 0, blockLength);
+        var blockData = new byte[size];
+        stream.Read(blockData, 0, size);
 
         return BlockSerializer.Deserialize(blockData);
     }
@@ -212,5 +230,4 @@ public class BlockFileReader
         // Write initial block count (0)
         filestream.Write(BitConverter.GetBytes(0), 0, 4);
     }
-
 }

@@ -24,7 +24,7 @@ namespace Spood.BlockChainCards.Serialization
         private void EnsureSchema(SqliteConnection? conn = null)
         {
             if (_schemaEnsured && conn == null) return;
-            SqliteConnection useConn = conn ?? new SqliteConnection($"Data Source={_dbPath};Version=3;");
+            SqliteConnection useConn = conn ?? new SqliteConnection($"Data Source={_dbPath}");
             bool opened = false;
             if (useConn.State != System.Data.ConnectionState.Open) { useConn.Open(); opened = true; }
             using var cmd = useConn.CreateCommand();
@@ -47,7 +47,7 @@ namespace Spood.BlockChainCards.Serialization
         public void BeginBulkIngest()
         {
             if (_bulkConn != null) throw new InvalidOperationException("Bulk ingest already started");
-            _bulkConn = new SqliteConnection($"Data Source={_dbPath};Version=3;");
+            _bulkConn = new SqliteConnection($"Data Source={_dbPath}");
             _bulkConn.Open();
             EnsureSchema(_bulkConn);
             _bulkTxn = _bulkConn.BeginTransaction();
@@ -78,7 +78,7 @@ namespace Spood.BlockChainCards.Serialization
         /// </summary>
         public void AddBlock(byte[] hash, int height, string file, int offset, int length)
         {
-            using var conn = new SqliteConnection($"Data Source={_dbPath};Version=3;");
+            using var conn = new SqliteConnection($"Data Source={_dbPath};");
             conn.Open();
             EnsureSchema(conn);
             using var cmd = conn.CreateCommand();
@@ -108,7 +108,7 @@ namespace Spood.BlockChainCards.Serialization
 
         public (string file, int offset, int length)? LookupByHash(byte[] hash)
         {
-            using var conn = new SqliteConnection($"Data Source={_dbPath};Version=3;");
+            using var conn = new SqliteConnection($"Data Source={_dbPath};");
             conn.Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT file, offset, length FROM blocks WHERE hash = @hash;";
@@ -125,23 +125,24 @@ namespace Spood.BlockChainCards.Serialization
             return null;
         }
 
-        public (string file, int offset, int length, byte[] hash)? LookupByHeight(int height)
+        public BlockIndexMetaData LookupByHeight(int height)
         {
-            using var conn = new SqliteConnection($"Data Source={_dbPath};Version=3;");
+            using var conn = new SqliteConnection($"Data Source={_dbPath};");
             conn.Open();
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT file, offset, length, hash FROM blocks WHERE height = @height;";
+            cmd.CommandText = "SELECT file, height, offset, length, hash FROM blocks WHERE height = @height;";
             cmd.Parameters.Add("@height", SqliteType.Integer).Value = height;
             using var reader = cmd.ExecuteReader();
             if (reader.Read())
             {
                 var hash = new byte[32];
                 reader.GetBytes(3, 0, hash, 0, 32);
-                return (
+                return new BlockIndexMetaData(
+                    hash,
                     reader.GetString(0),
                     reader.GetInt32(1),
                     reader.GetInt32(2),
-                    hash
+                    reader.GetInt32(3)
                 );
             }
             return null;
@@ -149,11 +150,23 @@ namespace Spood.BlockChainCards.Serialization
 
         public int GetTotalBlockCount()
         {
-            using var conn = new SqliteConnection($"Data Source={_dbPath};Version=3;");
+            using var conn = new SqliteConnection($"Data Source={_dbPath};");
             conn.Open();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT COUNT(*) FROM blocks;";
-            return (int)cmd.ExecuteScalar();
+            return Convert.ToInt32((long)cmd.ExecuteScalar());
+        }
+
+        public void Initialize()
+        {
+            // Ensure the index file and schema exist (idempotent)
+            if (!File.Exists(_dbPath))
+            {
+                File.Create(_dbPath).Dispose();
+            }
+            using var conn = new SqliteConnection($"Data Source={_dbPath};");
+            conn.Open();
+            EnsureSchema(conn);
         }
     }
 }
