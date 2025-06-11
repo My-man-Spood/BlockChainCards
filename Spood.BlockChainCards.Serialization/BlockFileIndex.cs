@@ -1,7 +1,5 @@
-using System.Data;
 using Microsoft.Data.Sqlite;
 using Spood.BlockChainCards.Lib.Configuration;
-using Spood.BlockChainCards.Serialization;
 
 namespace Spood.BlockChainCards.Serialization
 {
@@ -55,7 +53,6 @@ namespace Spood.BlockChainCards.Serialization
             if (opened) useConn.Dispose();
             if (conn == null) _schemaEnsured = true;
         }
-
 
         public void BeginBulkIngest()
         {

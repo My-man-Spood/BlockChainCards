@@ -30,7 +30,6 @@ public class FileBlockChainReader : IBlockChainReader
         // Robust, idempotent initialization
         this.blockFileReader = new BlockFileReader(blockchainPath);
         this.blockFileReader.Initialize();
-        // Use the PathConfiguration-based constructor for BlockFileIndex
         this.blockFileIndex = new BlockFileIndex(pathConfig);
         this.blockFileIndex.Initialize();
         
@@ -48,7 +47,39 @@ public class FileBlockChainReader : IBlockChainReader
         }
     }
 
-    // Folder initialization is now handled by PathConfiguration
+    /// <summary>
+    /// Returns the most recent blocks from the blockchain, up to the specified count
+    /// </summary>
+    /// <param name="count">Maximum number of blocks to retrieve</param>
+    /// <returns>Collection of the most recent blocks in descending order (newest first)</returns>
+    public IEnumerable<BCBlock> GetLatestBlocks(int count)
+    {
+        // Get the total number of blocks to determine the starting point
+        int totalBlocks = blockFileIndex.GetTotalBlockCount();
+        
+        if (totalBlocks == 0 || count <= 0)
+            yield break;
+            
+        // Handle case where requested count exceeds available blocks
+        int actualCount = Math.Min(count, totalBlocks);
+        
+        // Find the start block (count blocks from the end)
+        int startHeight = Math.Max(0, totalBlocks - actualCount);
+        var startMetadata = blockFileIndex.LookupByHeight(startHeight);
+        
+        if (startMetadata == null)
+            yield break;
+            
+        
+        // Efficiently read all blocks from the starting point
+        var blocks = blockFileReader.ReadBlocksFromPoint(startMetadata);
+        
+        // Return in reverse order (newest first)
+        for (int i = blocks.Count() - 1; i >= 0; i--)
+        {
+            yield return blocks.ElementAt(i);
+        }
+    }
 
     /// <summary>
     /// Catches up the block index by using BlockFileReader.EnumerateBlocksWithResults, inserting all unindexed blocks.

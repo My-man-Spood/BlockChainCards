@@ -7,6 +7,12 @@ public class BlockFileStreamHandler : IDisposable
     private readonly string path;
     private readonly FileStream stream;
     private const int Int32Size = 4; // Size of a 32-bit integer
+
+    private int? blockCount = null; // Cached block count from header
+    private int blocksRead = 0; // How many blocks have been read since last reset
+
+    public int BlockCount => blockCount ??= ReadBlockCount();
+    public int BlocksRead => blocksRead;
     
     public string FileName => Path.GetFileName(path);
 
@@ -34,6 +40,54 @@ public class BlockFileStreamHandler : IDisposable
     public void PositionAtFirstBlock()
     {
         stream.Position = Int32Size;
+        blocksRead = 0;
+    }
+
+    /// <summary>
+    /// Seeks the stream to the specified offset.
+    /// </summary>
+    public void SeekToOffset(long offset)
+    {
+        stream.Position = offset;
+        blocksRead = 0;
+    }
+
+    /// <summary>
+    /// Returns true if there are more blocks to read in this file.
+    /// </summary>
+    public bool HasMoreBlocks()
+    {
+        if (blocksRead >= BlockCount)
+            return false;
+        // Save current position
+        long originalPosition = stream.Position;
+        try
+        {
+            // If at or past end, no more blocks
+            if (stream.Position >= stream.Length)
+                return false;
+            // Try to read the next block length (Int32)
+            if (stream.Position + Int32Size > stream.Length)
+                return false;
+            int blockLength = 0;
+            try
+            {
+                blockLength = stream.ReadInt32();
+            }
+            catch
+            {
+                return false;
+            }
+            // If block length is invalid or would run past EOF, no more blocks
+            if (blockLength <= 0 || stream.Position + blockLength > stream.Length)
+                return false;
+            return true;
+        }
+        finally
+        {
+            // Restore position
+            stream.Position = originalPosition;
+        }
     }
     
     /// <summary>
@@ -92,7 +146,7 @@ public class BlockFileStreamHandler : IDisposable
         var blockData = new byte[blockLength];
         stream.Read(blockData, 0, blockLength);
         var block = BlockSerializer.Deserialize(blockData);
-        
+        blocksRead++;
         return new BlockReadResult(block, blockLength, dataOffset);
     }
     

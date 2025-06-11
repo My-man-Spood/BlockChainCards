@@ -24,28 +24,28 @@ class ShowBlockchainCommand : ICommand
 
     private void ShowBlockChain(ShowBlockChainCommandOptions options)
     {
-        // var blocks = blockChainReader.ReadBlockChain();
-        // var count = Math.Min(options.Count, blocks.Count);
-        // for (int i = blocks.Count - count; i < blocks.Count; i++)
-        // {
-        //     var block = blocks[i];
-        //     if(options.Verbose)
-        //         PrintBlockVerbose(block, i);
-        //     else
-        //         PrintBlockShort(block, i);
+        var blocks = blockChainReader.GetLatestBlocks(options.Count);
+        var count = Math.Min(options.Count, blocks.Count());
+        for (int i = blocks.Count() - count; i < blocks.Count(); i++)
+        {
+            var block = blocks.ElementAt(i);
+            if(options.Verbose)
+                PrintBlockVerbose(block, i);
+            else
+                PrintBlockShort(block, i);
 
-        //     if (options.ShowTransactions)
-        //     {
-        //         for (int j = 0; j < block.Transactions.Count; j++)
-        //         {
-        //             if (j != 0) Console.WriteLine("");
-        //             if (options.Verbose)
-        //                 PrintTransactionVerbose(block.Transactions[j]);
-        //             else
-        //                 PrintTransactionShort(block.Transactions[j]);
-        //         }
-        //     }
-        // }
+            if (options.ShowTransactions)
+            {
+                for (int j = 0; j < block.Transactions.Count; j++)
+                {
+                    if (j != 0) Console.WriteLine("");
+                    if (options.Verbose)
+                        PrintTransactionVerbose(block.Transactions[j]);
+                    else
+                        PrintTransactionShort(block.Transactions[j]);
+                }
+            }
+        }
     }
 
     private static void PrintTransactionVerbose(BCTransaction transaction)

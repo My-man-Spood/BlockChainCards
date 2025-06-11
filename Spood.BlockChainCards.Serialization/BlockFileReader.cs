@@ -2,7 +2,9 @@ namespace Spood.BlockChainCards.Serialization;
 
 using Spood.BlockChainCards.Lib;
 using Spood.BlockChainCards.Lib.ByteUtils;
+using Spood.BlockChainCards;
 using System.IO;
+using System.Text;
 
 public class BlockFileReader
 {
@@ -165,45 +167,73 @@ public class BlockFileReader
         }
     }
 
+    /// <summary>
+    /// Reads a block directly from a file using the provided metadata
+    /// </summary>
+    /// <param name="blockFilePath">The relative path to the block file (will be combined with base path)</param>
+    /// <param name="blockOffset">Offset position in the file</param>
+    /// <param name="size">Size of the block in bytes</param>
+    /// <returns>The deserialized block</returns>
     public BCBlock ReadBlockDirect(string blockFilePath, int blockOffset, int size)
     {
         using var stream = new FileStream(Path.Combine(filePath, blockFilePath), FileMode.Open, FileAccess.Read, FileShare.Read);
         stream.Seek(blockOffset, SeekOrigin.Begin);
         var blockData = new byte[size];
         stream.Read(blockData, 0, size);
-
         return BlockSerializer.Deserialize(blockData);
     }
-
-    public static IEnumerable<BCBlock> ReadBlockFile(string filePath)
+    
+    /// <summary>
+    /// Streams all blocks starting from a specific BlockIndexMetaData point up to the end of the blockchain
+    /// </summary>
+    /// <param name="startMetaData">The metadata of the starting block</param>
+    /// <returns>IEnumerable of all blocks from the starting point to the end</returns>
+    public IEnumerable<BCBlock> ReadBlocksFromPoint(BlockIndexMetaData startMetaData)
     {
-        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        var blockCountBytes = new byte[4];
-        stream.Read(blockCountBytes, 0, 4);
-        var blockCount = BitConverter.ToInt32(blockCountBytes, 0);
-        for (int i = 0; i < blockCount; i++)
+        // Open the starting file directly using the metadata
+        using (var handler = new BlockFileStreamHandler(Path.Combine(filePath, startMetaData.FilePath), FileMode.Open, FileAccess.Read))
         {
-            var blockLengthBytes = new byte[4];
-            stream.Read(blockLengthBytes, 0, 4);
-            var blockLength = BitConverter.ToInt32(blockLengthBytes, 0);
-            var blockData = new byte[blockLength];
-            stream.Read(blockData, 0, blockLength);
-            yield return BlockSerializer.Deserialize(blockData);
+            // Seek to the starting block's offset
+            handler.SeekToOffset(startMetaData.Offset);
+            // Read the starting block
+            yield return handler.ReadBlockAtCurrentPosition().Block;
+            // Read remaining blocks in this file
+            while (handler.HasMoreBlocks())
+            {
+                yield return handler.ReadBlockAtCurrentPosition().Block;
+            }
+        }
+        // Now move to subsequent files (if any)
+        foreach (var file in GetOrderedBlockFilesAfter(startMetaData.FilePath))
+        {
+            using (var handler = new BlockFileStreamHandler(file, FileMode.Open, FileAccess.Read))
+            {
+                handler.PositionAtFirstBlock();
+                while (handler.HasMoreBlocks())
+                {
+                    yield return handler.ReadBlockAtCurrentPosition().Block;
+                }
+            }
         }
     }
 
-    private static int IncrementBlockCount(FileStream stream)
+    /// <summary>
+    /// Returns all block files ordered after the given file (exclusive)
+    /// </summary>
+    private IEnumerable<string> GetOrderedBlockFilesAfter(string filePath)
     {
-        stream.Seek(0, SeekOrigin.Begin);
-        var countBuffer = new byte[4];
-        stream.Read(countBuffer, 0, 4);
-        int count = BitConverter.ToInt32(countBuffer, 0) + 1;
-        stream.Seek(0, SeekOrigin.Begin);
-        stream.Write(BitConverter.GetBytes(count), 0, 4);
-        stream.Flush();
-        return count;
+        var allFiles = Directory.GetFiles(this.filePath, "_*.blk").OrderBy(f => f).ToList();
+        string fileName = Path.GetFileName(filePath);
+        bool found = false;
+        foreach (var file in allFiles)
+        {
+            if (found)
+                yield return file;
+            if (Path.GetFileName(file).Equals(fileName, StringComparison.OrdinalIgnoreCase))
+                found = true;
+        }
     }
-
+    
     private static void RotateBlockFileIfFull(string openBlockPath, int blockCount)
     {   
         if (blockCount == BlocksPerFile)

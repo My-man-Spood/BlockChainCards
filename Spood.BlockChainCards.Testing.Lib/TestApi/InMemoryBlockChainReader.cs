@@ -33,4 +33,9 @@ public class InMemoryBlockChainReader : IBlockChainReader
         _blocks.Clear();
         _blocks.AddRange(blocks);
     }
+
+    public IEnumerable<BCBlock> GetLatestBlocks(int count)
+    {
+        throw new NotImplementedException();
+    }
 }

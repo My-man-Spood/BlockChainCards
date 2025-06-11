@@ -15,8 +15,6 @@ var serializerOptions = new JsonSerializerOptions
     WriteIndented = true,
 };
 
-// Directories are created by PathConfiguration
-
 // Setup dependencies
 var cardRepo = new FileCardRepository(pathConfig.CardsJsonPath, serializerOptions);
 var cardOwnerShipStore = new SQLiteCardOwnershipStore(pathConfig.CardOwnershipDbPath);
