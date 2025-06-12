@@ -37,7 +37,11 @@ namespace Spood.BlockChainCards.Serialization
             if (_schemaEnsured && conn == null) return;
             SqliteConnection useConn = conn ?? new SqliteConnection($"Data Source={_dbPath}");
             bool opened = false;
-            if (useConn.State != System.Data.ConnectionState.Open) { useConn.Open(); opened = true; }
+            if (useConn.State != System.Data.ConnectionState.Open) 
+            { 
+                useConn.Open(); 
+                opened = true; 
+            }
             using var cmd = useConn.CreateCommand();
             cmd.CommandText = @"
             CREATE TABLE IF NOT EXISTS blocks (
@@ -174,11 +178,9 @@ namespace Spood.BlockChainCards.Serialization
             // Ensure the index file and schema exist (idempotent)
             if (!File.Exists(_dbPath))
             {
-                File.Create(_dbPath).Dispose();
+                using var file = File.Create(_dbPath);
             }
-            using var conn = new SqliteConnection($"Data Source={_dbPath};");
-            conn.Open();
-            EnsureSchema(conn);
+            EnsureSchema();
         }
     }
 }

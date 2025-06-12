@@ -3,6 +3,7 @@ using Spood.BlockChainCards;
 using Spood.BlockChainCards.Commands;
 using Spood.BlockChainCards.Lib.ByteUtils;
 using Spood.BlockChainCards.Lib.Configuration;
+using Spood.BlockChainCards.Serialization;
 
 // Centralized path configuration
 var pathConfig = new PathConfiguration("./CLI");
@@ -20,7 +21,9 @@ var cardRepo = new FileCardRepository(pathConfig.CardsJsonPath, serializerOption
 var cardOwnerShipStore = new SQLiteCardOwnershipStore(pathConfig.CardOwnershipDbPath);
 var walletReader = new JsonWalletReader(serializerOptions);
 // Pass PathConfiguration to the reader for consistent path management
-var blockChainReader = new FileBlockChainReader(pathConfig.BlockchainPath, walletReader, cardOwnerShipStore, pathConfig);
+var blockFileIndex = new BlockFileIndex(pathConfig);
+var BlockFileReader = new BlockFileReader(pathConfig.BlockchainPath);
+var blockChainReader = new FileBlockChainReader(BlockFileReader, blockFileIndex, walletReader, cardOwnerShipStore, pathConfig);
 
 // Register command factories
 var commandFactories = new Dictionary<string, Func<ICommand>>(StringComparer.OrdinalIgnoreCase)

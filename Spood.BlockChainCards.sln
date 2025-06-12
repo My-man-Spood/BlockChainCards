@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Testi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Testing.Lib", "Spood.BlockChainCards.Testing.Lib\Spood.BlockChainCards.Testing.Lib.csproj", "{38CC9425-275A-3556-F03A-1CA1FBB08CD9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spood.BlockChainCards.Testing.IntegrationTests", "Spood.BlockChainCards.Testing.IntegrationTests\Spood.BlockChainCards.Testing.IntegrationTests.csproj", "{682B8AF6-69D6-4933-ABF6-CFD1FB212D56}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{38CC9425-275A-3556-F03A-1CA1FBB08CD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38CC9425-275A-3556-F03A-1CA1FBB08CD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{38CC9425-275A-3556-F03A-1CA1FBB08CD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{682B8AF6-69D6-4933-ABF6-CFD1FB212D56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{682B8AF6-69D6-4933-ABF6-CFD1FB212D56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{682B8AF6-69D6-4933-ABF6-CFD1FB212D56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{682B8AF6-69D6-4933-ABF6-CFD1FB212D56}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

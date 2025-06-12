@@ -8,42 +8,30 @@ namespace Spood.BlockChainCards;
 
 public class FileBlockChainReader : IBlockChainReader
 {
-    private const int blockSafetyThreshold = 5;
-    private readonly string blockchainPath;
-    private readonly JsonSerializerOptions serializerOptions;
     private readonly IWalletReader walletReader;
     private readonly ICardOwnershipStore cardOwnershipStore;
     private readonly BlockFileIndex blockFileIndex;
     private readonly BlockFileReader blockFileReader;
     private readonly PathConfiguration pathConfig;
     
-    public FileBlockChainReader(string blockchainPath, IWalletReader walletReader, ICardOwnershipStore cardOwnershipStore, PathConfiguration pathConfig)
+    public FileBlockChainReader(BlockFileReader blockFileReader, BlockFileIndex blockFileIndex, IWalletReader walletReader, ICardOwnershipStore cardOwnershipStore, PathConfiguration pathConfig)
     {
-        this.blockchainPath = blockchainPath;
+        this.blockFileReader = blockFileReader;
+        this.blockFileIndex = blockFileIndex;
         this.walletReader = walletReader;
         this.cardOwnershipStore = cardOwnershipStore;
         this.pathConfig = pathConfig;
-        
-        // Path is now managed by PathConfiguration
-        // pathConfig.EnsureDirectoriesExist() should be called before this constructor
-        
-        // Robust, idempotent initialization
-        this.blockFileReader = new BlockFileReader(blockchainPath);
+    }
+
+    public void Initialize()
+    {
         this.blockFileReader.Initialize();
-        this.blockFileIndex = new BlockFileIndex(pathConfig);
         this.blockFileIndex.Initialize();
-        
-        if (blockFileReader.GetTotalBlockCount() == 0)
+        if(blockFileReader.GetTotalBlockCount() == 0)
         {
-            // Only create genesis if no blocks exist
             var genesisBlock = new BCBlock(Enumerable.Repeat((byte)153,32).ToArray(), []);
             var appendBlockResult = blockFileReader.AppendBlock(genesisBlock);
             blockFileIndex.AddBlock(genesisBlock.Hash, appendBlockResult.BlockIndexGlobal, appendBlockResult.BlockFilePath, appendBlockResult.BlockOffset, appendBlockResult.BlockSize);
-        }
-        else
-        {
-            CatchupBlockIndex();
-            CatchupCardOwnership(cardOwnershipStore);
         }
     }
 
@@ -78,70 +66,6 @@ public class FileBlockChainReader : IBlockChainReader
         for (int i = blocks.Count() - 1; i >= 0; i--)
         {
             yield return blocks.ElementAt(i);
-        }
-    }
-
-    /// <summary>
-    /// Catches up the block index by using BlockFileReader.EnumerateBlocksWithResults, inserting all unindexed blocks.
-    /// </summary>
-    private void CatchupBlockIndex()
-    {
-        int indexedHeight = blockFileIndex.GetTotalBlockCount();
-        int totalBlocks = blockFileReader.GetTotalBlockCount();
-        if (indexedHeight >= totalBlocks)
-            return;
-
-        blockFileIndex.BeginBulkIngest();
-        foreach (var result in blockFileReader.EnumerateBlocksMetaData(indexedHeight))
-        {
-            blockFileIndex.IngestBlock(result.BlockHash, result.BlockIndexGlobal, result.BlockFilePath, result.BlockOffset, result.BlockSize);
-        }
-        blockFileIndex.EndBulkIngest();
-    }
-
-
-    private void CatchupCardOwnership(ICardOwnershipStore cardOwnershipStore)
-    {
-        var lastBlockIndex = blockFileIndex.GetTotalBlockCount() - 1;
-        var safeBlockIndex = Math.Max(0, lastBlockIndex - blockSafetyThreshold);
-        var checkpointIndex = cardOwnershipStore.GetCheckpoint();
-        if (checkpointIndex < safeBlockIndex)
-        {
-            BulkIngest();
-        }
-        checkpointIndex = cardOwnershipStore.GetCheckpoint();
-        
-        // Lock cards for unsafe blocks
-        for (int i = checkpointIndex + 1; i <= lastBlockIndex; i++)
-        {
-            var meta = blockFileIndex.LookupByHeight(i);
-            var block = blockFileReader.ReadBlockDirect(meta.FilePath, meta.Offset, meta.Size);
-            foreach (var tx in block.Transactions)
-            {
-                foreach (var card in tx.GetAllCards())
-                {
-                    cardOwnershipStore.LockCard(card, i, tx.Id);
-                }
-            }
-        }
-    }
-
-    private void BulkIngest()
-    {
-        var checkpointIndex = cardOwnershipStore.GetCheckpoint();
-        var lastBlockIndex = blockFileIndex.GetTotalBlockCount() - 1;
-        var safeEnd = lastBlockIndex - blockSafetyThreshold;
-
-        if (safeEnd > checkpointIndex)
-        {
-            cardOwnershipStore.BeginBulkIngest();
-            for (int i = checkpointIndex; i <= lastBlockIndex - blockSafetyThreshold; i++)
-            {
-                var meta = blockFileIndex.LookupByHeight(i);
-                var block = blockFileReader.ReadBlockDirect(meta.FilePath, meta.Offset, meta.Size);
-                cardOwnershipStore.IngestBlock(block, i);
-            }
-            cardOwnershipStore.EndBulkIngest();
         }
     }
 
@@ -206,4 +130,5 @@ public class FileBlockChainReader : IBlockChainReader
         }
         return true;
     }
+
 }

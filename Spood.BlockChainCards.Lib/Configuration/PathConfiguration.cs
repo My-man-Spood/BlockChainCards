@@ -19,6 +19,8 @@ namespace Spood.BlockChainCards.Lib.Configuration
             Directory.CreateDirectory(this.basePath);
         }
 
+        public int BlockSafetyThreshold { get; set; } = 5;
+
         // Base directories
         public string BasePath => basePath;
         public string BlockchainPath => Path.Combine(basePath, "Blockchain");

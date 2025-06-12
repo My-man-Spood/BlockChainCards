@@ -2,9 +2,7 @@ namespace Spood.BlockChainCards.Serialization;
 
 using Spood.BlockChainCards.Lib;
 using Spood.BlockChainCards.Lib.ByteUtils;
-using Spood.BlockChainCards;
 using System.IO;
-using System.Text;
 
 public class BlockFileReader
 {

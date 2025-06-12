@@ -20,6 +20,15 @@ namespace Spood.BlockChainCards
         public SQLiteCardOwnershipStore(string dbPath)
         {
             _connectionString = $"Data Source={dbPath}";
+        }
+
+        public void Initialize()
+        {
+            if (!File.Exists(_connectionString))
+            {
+                File.Create(_connectionString).Dispose();
+            }
+
             EnsureTablesExist();
         }
 
